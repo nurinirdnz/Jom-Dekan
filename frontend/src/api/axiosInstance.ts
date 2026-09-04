@@ -1,0 +1,71 @@
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
+
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+const timeout = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
+
+export const axiosInstance = axios.create({
+  baseURL,
+  timeout,
+  // Sends the HTTP-only refresh cookie on same-site/credentialed requests.
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+interface RetryableConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+// Single-flight refresh: concurrent 401s all wait on the same promise
+// instead of hammering /auth/refresh in parallel.
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post<{ accessToken: string; user: { id: string; email: string; role: 'USER' | 'ADMIN' } }>(
+        `${baseURL}/auth/refresh`,
+        {},
+        { withCredentials: true },
+      )
+      .then((res) => {
+        useAuthStore.getState().setSession(res.data.accessToken, res.data.user);
+        return res.data.accessToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as RetryableConfig | undefined;
+
+    if (error.response?.status === 401 && original && !original._retry && !original.url?.includes('/auth/')) {
+      original._retry = true;
+      try {
+        const newToken = await refreshAccessToken();
+        original.headers = original.headers ?? {};
+        original.headers.Authorization = `Bearer ${newToken}`;
+        return axiosInstance(original);
+      } catch {
+        useAuthStore.getState().clearSession();
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+export default axiosInstance;

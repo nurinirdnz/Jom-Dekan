@@ -1,0 +1,21 @@
+-- =====================================================================
+-- JomDekan — consolidated schema entry point
+-- =====================================================================
+-- This file is a convenience wrapper for a *fresh local database only*.
+-- It applies every numbered migration in database/migrations/ in order.
+-- Migrations remain the source of truth — never hand-edit a table
+-- definition here without also adding/adjusting a numbered migration.
+--
+-- Usage:
+--   psql -U postgres -d jomdekan -f database/schema.sql
+--
+-- Current migrations (Milestone 0/1 scope):
+--   001_create_identity_and_taxonomy.sql
+--
+-- Future milestones will add, in order:
+--   002_create_resources.sql            (Milestone 3)
+--   003_create_community.sql            (Milestone 5)
+--   004_create_moderation_and_events.sql(Milestone 6+)
+-- =====================================================================
+
+\i migrations/001_create_identity_and_taxonomy.sql
