@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
-import { useCurrentUser, useLogout } from '../../hooks/useAuth';
+import { Link } from "react-router-dom";
+import { GraduationCap } from "lucide-react";
+import { useCurrentUser, useLogout } from "../../hooks/useAuth";
 
 export function Header() {
   const user = useCurrentUser();
@@ -9,7 +9,10 @@ export function Header() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-primary-700">
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-semibold text-primary-700"
+        >
           <GraduationCap className="h-6 w-6" aria-hidden="true" />
           <span>JomDekan</span>
         </Link>
@@ -17,7 +20,18 @@ export function Header() {
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link to="/dashboard" className="text-slate-700 hover:text-primary-700">
+              {user.role === "ADMIN" && (
+                <Link
+                  to="/admin/universities"
+                  className="text-slate-700 hover:text-primary-700"
+                >
+                  Admin
+                </Link>
+              )}
+              <Link
+                to="/dashboard"
+                className="text-slate-700 hover:text-primary-700"
+              >
                 Dashboard
               </Link>
               <button
@@ -30,7 +44,10 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link to="/login" className="text-slate-700 hover:text-primary-700">
+              <Link
+                to="/login"
+                className="text-slate-700 hover:text-primary-700"
+              >
                 Log in
               </Link>
               <Link

@@ -21,4 +21,3 @@
   },
   "include": ["src/**/*.ts", "index.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests"]
-}
