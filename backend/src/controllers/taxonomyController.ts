@@ -11,7 +11,7 @@ function ctxFrom(req: Request) {
 
 export const taxonomyController = {
   // ---- Universities ----
-  async listUniversities(req: Request, res: Response, next: NextFunction) {
+  async listUniversities(_req: Request, res: Response, next: NextFunction) {
     try {
       const data = await taxonomyService.universities.list();
       res.status(200).json({ data });
@@ -72,6 +72,7 @@ export const taxonomyController = {
       next(err);
     }
   },
+
   async createFaculty(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await taxonomyService.faculties.create(
@@ -167,7 +168,7 @@ export const taxonomyController = {
   },
 
   // ---- Subjects ----
-  async listSubjects(req: Request, res: Response, next: NextFunction) {
+  async listSubjects(_req: Request, res: Response, next: NextFunction) {
     try {
       const data = await taxonomyService.subjects.list();
       res.status(200).json({ data });
