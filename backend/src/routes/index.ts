@@ -1,6 +1,7 @@
-import { Router } from 'express';
-import healthRoutes from './healthRoutes';
-import authRoutes from './authRoutes';
+import { Router } from "express";
+import healthRoutes from "./healthRoutes";
+import authRoutes from "./authRoutes";
+import taxonomyRoutes from "./taxonomyRoutes";
 
 /**
  * All product routes are mounted under /api/v1. System routes
@@ -10,6 +11,7 @@ import authRoutes from './authRoutes';
 const router = Router();
 
 router.use(healthRoutes);
-router.use('/auth', authRoutes);
+router.use("/auth", authRoutes);
+router.use("/taxonomy", taxonomyRoutes);
 
 export default router;
