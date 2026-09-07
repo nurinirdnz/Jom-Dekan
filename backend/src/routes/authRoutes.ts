@@ -3,7 +3,7 @@ import { authController } from '../controllers/authController';
 import { validate } from '../config/middleware/validateMiddleware';
 import { authenticate } from '../config/middleware/authMiddleware';
 import { authRateLimiter } from '../config/middleware/rateLimitMiddleware';
-import { registerSchema, loginSchema } from '../validators/authValidators';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../validators/authValidators';
 
 const router = Router();
 
@@ -88,5 +88,58 @@ router.post('/logout', authController.logout);
  *       401: { description: Not authenticated }
  */
 router.get('/me', authenticate, authController.me);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request a password reset link
+ *     description: Always responds 200, whether or not the email is registered, to avoid leaking which emails have accounts.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email }
+ *     responses:
+ *       200: { description: Reset link sent if the account exists }
+ */
+router.post(
+  '/forgot-password',
+  authRateLimiter,
+  validate({ body: forgotPasswordSchema }),
+  authController.forgotPassword,
+);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using the single-use token from the forgot-password email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword]
+ *             properties:
+ *               token: { type: string }
+ *               newPassword: { type: string, minLength: 8 }
+ *     responses:
+ *       200: { description: Password reset successfully }
+ *       400: { description: Reset token is invalid, expired, or already used }
+ */
+router.post(
+  '/reset-password',
+  authRateLimiter,
+  validate({ body: resetPasswordSchema }),
+  authController.resetPassword,
+);
 
 export default router;

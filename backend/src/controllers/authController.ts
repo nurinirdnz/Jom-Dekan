@@ -92,4 +92,24 @@ export const authController = {
       next(err);
     }
   },
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body as { email: string };
+      await authService.requestPasswordReset({ email, requestId: req.requestId, ipAddress: req.ip });
+      res.status(200).json({ message: 'If that email is registered, a password reset link has been sent.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token, newPassword } = req.body as { token: string; newPassword: string };
+      await authService.resetPassword({ token, newPassword, requestId: req.requestId, ipAddress: req.ip });
+      res.status(200).json({ message: 'Password reset successfully. Please log in with your new password.' });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
