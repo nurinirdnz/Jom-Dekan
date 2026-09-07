@@ -8,6 +8,9 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import Resources from "./pages/Resources";
+import UploadResource from "./pages/UploadResource";
+import ResourceDetail from "./pages/ResourceDetail";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminFaculties from "./pages/admin/AdminFaculties";
 import AdminProgrammes from "./pages/admin/AdminProgrammes";
@@ -32,6 +35,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute>
+                <Resources />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources/upload"
+            element={
+              <ProtectedRoute>
+                <UploadResource />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources/:id"
+            element={
+              <ProtectedRoute>
+                <ResourceDetail />
               </ProtectedRoute>
             }
           />

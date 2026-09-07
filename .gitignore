@@ -8,4 +8,5 @@ coverage/
 .DS_Store
 .vite/
 backend/uploads-stub/
+backend/storage/
 *.tsbuildinfo

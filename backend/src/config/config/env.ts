@@ -51,12 +51,25 @@ const envSchema = z.object({
     .min(16, "COOKIE_SECRET must be at least 16 characters"),
 
   STORAGE_PROVIDER: z
-    .enum(["local-stub", "s3", "supabase"])
+    .enum(["local-stub", "local-fs", "s3", "supabase"])
     .default("local-stub"),
   STORAGE_BUCKET: z.string().default("jomdekan-resources"),
   STORAGE_ENDPOINT: z.string().optional().default(""),
   STORAGE_ACCESS_KEY_ID: z.string().optional().default(""),
   STORAGE_SECRET_ACCESS_KEY: z.string().optional().default(""),
+  // Local-fs adapter only (dev-only storage backend, no cloud account needed).
+  STORAGE_LOCAL_ROOT: z.string().default("./storage/resources"),
+  STORAGE_SIGNING_SECRET: z
+    .string()
+    .min(32, "STORAGE_SIGNING_SECRET must be at least 32 characters"),
+
+  RESOURCE_MAX_FILE_SIZE_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(20 * 1024 * 1024),
+  RESOURCE_UPLOAD_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  RESOURCE_DOWNLOAD_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 
   REDIS_URL: z.string().optional().default(""),
 
@@ -140,6 +153,14 @@ export const env = {
     endpoint: raw.STORAGE_ENDPOINT,
     accessKeyId: raw.STORAGE_ACCESS_KEY_ID,
     secretAccessKey: raw.STORAGE_SECRET_ACCESS_KEY,
+    localRoot: raw.STORAGE_LOCAL_ROOT,
+    signingSecret: raw.STORAGE_SIGNING_SECRET,
+  },
+
+  resources: {
+    maxFileSizeBytes: raw.RESOURCE_MAX_FILE_SIZE_BYTES,
+    uploadTokenTtlSeconds: raw.RESOURCE_UPLOAD_TOKEN_TTL_SECONDS,
+    downloadTokenTtlSeconds: raw.RESOURCE_DOWNLOAD_TOKEN_TTL_SECONDS,
   },
 
   redisUrl: raw.REDIS_URL,

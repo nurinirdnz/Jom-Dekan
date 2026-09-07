@@ -5,6 +5,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import pinoHttp from 'pino-http';
+import pino from 'pino';
 import { env } from './config/config/env';
 import { logger } from './utils/logger';
 import { requestIdMiddleware } from './config/middleware/requestIdMiddleware';
@@ -26,6 +27,18 @@ export function createApp(): Express {
       logger,
       genReqId: (req) => (req as express.Request).requestId,
       autoLogging: { ignore: (req) => req.url?.startsWith('/api/v1/health') ?? false },
+      // The two storage routes carry a signed token as a query string
+      // (they must work as bare links) — never let it reach log
+      // storage, even though it's short-lived and scoped.
+      serializers: {
+        req(req) {
+          const serialized = pino.stdSerializers.req(req);
+          if (serialized.url?.includes('/resources/files/') && serialized.url.includes('token=')) {
+            serialized.url = serialized.url.replace(/token=[^&]*/, 'token=[REDACTED]');
+          }
+          return serialized;
+        },
+      },
     }),
   );
 
@@ -49,6 +62,16 @@ export function createApp(): Express {
           scriptSrc: ["'self'"],
         },
       },
+      // This API is deliberately consumed by a separate frontend origin
+      // (see the explicit CORS origins above), and resources/files/download
+      // is designed to work as a bare link embedded via <img src> or
+      // opened in a new tab from that origin. Helmet's same-origin CORP
+      // default blocks exactly that (silently, for no-cors loads like
+      // <img> — it doesn't affect the JSON fetch/XHR calls elsewhere,
+      // which is why only images were affected). Auth/ownership checks
+      // remain the real security boundary; this only controls whether
+      // another origin may embed the response at all.
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
 
