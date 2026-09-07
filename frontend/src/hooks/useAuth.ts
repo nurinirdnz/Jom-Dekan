@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../service/authService';
 import { useAuthStore } from '../store/useAuthStore';
-import type { LoginFormValues, RegisterFormValues } from '../schemas/authSchemas';
+import type { ForgotPasswordFormValues, LoginFormValues, RegisterFormValues } from '../schemas/authSchemas';
 
 export function useCurrentUser() {
   return useAuthStore((s) => s.user);
@@ -46,6 +46,23 @@ export function useLogout() {
     onSettled: () => {
       clearSession();
       queryClient.clear();
+      navigate('/login');
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (values: ForgotPasswordFormValues) => authService.forgotPassword(values),
+  });
+}
+
+export function useResetPassword() {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (values: { token: string; newPassword: string }) => authService.resetPassword(values),
+    onSuccess: () => {
       navigate('/login');
     },
   });
