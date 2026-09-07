@@ -30,7 +30,14 @@ export default function Login() {
       <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         {serverError && (
           <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {serverError}
+            <p>{serverError}</p>
+            <p className="mt-1">
+              New here?{' '}
+              <Link to="/register" className="font-medium underline">
+                Create an account
+              </Link>
+              .
+            </p>
           </div>
         )}
 
@@ -55,9 +62,14 @@ export default function Login() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <Link to="/forgot-password" className="text-sm font-medium text-primary-700 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"
