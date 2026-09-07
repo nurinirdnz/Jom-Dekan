@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { userModel, toSafeUser, type UserRow } from '../models/userModel';
 import { sessionModel } from '../models/sessionModel';
 import { auditLogModel } from '../models/auditLogModel';
+import { passwordResetTokenModel } from '../models/passwordResetTokenModel';
+import { emailService } from './emailService';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../config/config/auth';
 import { env } from '../config/config/env';
 import { AppError } from '../types/errors';
@@ -10,9 +12,14 @@ import { logger } from '../utils/logger';
 import { parseDurationMs } from '../utils/duration';
 
 const BCRYPT_COST = 12;
+const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+function generateRawToken(): string {
+  return randomBytes(32).toString('hex');
 }
 
 export function refreshExpiryDate(): Date {
@@ -176,5 +183,67 @@ export const authService = {
       throw AppError.notFound('User not found.');
     }
     return toSafeUser(user);
+  },
+
+  async requestPasswordReset(params: { email: string; requestId?: string; ipAddress?: string }): Promise<void> {
+    const user = await userModel.findByEmail(params.email);
+
+    // Same response whether or not the account exists — this endpoint
+    // must never let a caller learn which emails are registered.
+    if (user && user.status === 'ACTIVE') {
+      await passwordResetTokenModel.invalidateAllForUser(user.id);
+
+      const rawToken = generateRawToken();
+      await passwordResetTokenModel.create({
+        userId: user.id,
+        tokenHash: hashToken(rawToken),
+        expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
+      });
+
+      const resetUrl = `${env.corsOrigins[0]}/reset-password?token=${rawToken}`;
+      await emailService.sendEmail({
+        to: user.email,
+        subject: 'Reset your JomDekan password',
+        text: `We received a request to reset your JomDekan password.\n\nReset it here (expires in 1 hour, single use):\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
+      });
+
+      await auditLogModel.record({
+        actorUserId: user.id,
+        action: 'PASSWORD_RESET_REQUESTED',
+        targetType: 'user',
+        targetId: user.id,
+        requestId: params.requestId,
+        ipAddress: params.ipAddress,
+      });
+    }
+  },
+
+  async resetPassword(params: { token: string; newPassword: string; requestId?: string; ipAddress?: string }): Promise<void> {
+    const tokenRow = await passwordResetTokenModel.findValidByTokenHash(hashToken(params.token));
+    if (!tokenRow) {
+      throw AppError.badRequest('This password reset link is invalid or has expired.');
+    }
+
+    const user = await userModel.findById(tokenRow.user_id);
+    if (!user || user.status !== 'ACTIVE') {
+      throw AppError.badRequest('This password reset link is invalid or has expired.');
+    }
+
+    const passwordHash = await bcrypt.hash(params.newPassword, BCRYPT_COST);
+    await userModel.updatePassword(user.id, passwordHash);
+    await passwordResetTokenModel.markUsed(tokenRow.id);
+    // A compromised account must not stay logged in anywhere after reset.
+    await sessionModel.revokeAllForUser(user.id);
+
+    await auditLogModel.record({
+      actorUserId: user.id,
+      action: 'PASSWORD_RESET_COMPLETED',
+      targetType: 'user',
+      targetId: user.id,
+      requestId: params.requestId,
+      ipAddress: params.ipAddress,
+    });
+
+    logger.info({ userId: user.id }, 'Password reset completed');
   },
 };

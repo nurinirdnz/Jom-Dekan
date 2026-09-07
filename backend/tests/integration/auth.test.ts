@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { pool } from '../../src/config/config/db';
+import { emailService } from '../../src/services/emailService';
 
 /**
  * Integration tests against a real PostgreSQL test database. Requires
@@ -110,5 +111,89 @@ describe('Auth API', () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  describe('Password reset', () => {
+    const resetTestEmail = `reset-test-${Date.now()}@example.com`;
+
+    beforeAll(async () => {
+      if (skip) return;
+      await request(app).post('/api/v1/auth/register').send({
+        email: resetTestEmail,
+        password: 'original-password',
+        displayName: 'Reset Test',
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    function extractToken(emailText: string): string {
+      const url = new URL(emailText.match(/https?:\/\/\S+/)![0]);
+      return url.searchParams.get('token')!;
+    }
+
+    it('always returns 200 for forgot-password, whether or not the email is registered (no enumeration)', async () => {
+      if (skip) return;
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValue();
+
+      const known = await request(app).post('/api/v1/auth/forgot-password').send({ email: resetTestEmail });
+      const unknown = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: `no-such-user-${Date.now()}@example.com` });
+
+      expect(known.status).toBe(200);
+      expect(unknown.status).toBe(200);
+      expect(known.body.message).toBe(unknown.body.message);
+    });
+
+    it('resets the password end-to-end and revokes existing sessions', async () => {
+      if (skip) return;
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetTestEmail, password: 'original-password' });
+      expect(loginRes.status).toBe(200);
+      const oldSessionCookie = loginRes.headers['set-cookie'];
+
+      const sendEmailSpy = jest.spyOn(emailService, 'sendEmail').mockResolvedValue();
+      await request(app).post('/api/v1/auth/forgot-password').send({ email: resetTestEmail });
+      expect(sendEmailSpy).toHaveBeenCalledTimes(1);
+      const token = extractToken(sendEmailSpy.mock.calls[0][0].text);
+
+      const resetRes = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token, newPassword: 'brand-new-password' });
+      expect(resetRes.status).toBe(200);
+
+      // The old session must not survive a password reset.
+      const refreshRes = await request(app).post('/api/v1/auth/refresh').set('Cookie', oldSessionCookie);
+      expect(refreshRes.status).toBe(401);
+
+      // Old password no longer works; new password does.
+      const oldLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetTestEmail, password: 'original-password' });
+      expect(oldLogin.status).toBe(401);
+
+      const newLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetTestEmail, password: 'brand-new-password' });
+      expect(newLogin.status).toBe(200);
+
+      // The reset token is single-use.
+      const reuseRes = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token, newPassword: 'yet-another-password' });
+      expect(reuseRes.status).toBe(400);
+    });
+
+    it('rejects an invalid or unknown reset token with 400', async () => {
+      if (skip) return;
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'not-a-real-token', newPassword: 'whatever-password' });
+      expect(res.status).toBe(400);
+    });
   });
 });

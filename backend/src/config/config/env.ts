@@ -62,12 +62,29 @@ const envSchema = z.object({
 
   EMAIL_PROVIDER: z.enum(["console", "smtp"]).default("console"),
   EMAIL_FROM: z.string().email().default("no-reply@jomdekan.app"),
+  SMTP_HOST: z.string().optional().default(""),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: z.string().optional().default(""),
+  SMTP_PASSWORD: z.string().optional().default(""),
 
   GOOGLE_CLIENT_ID: z.string().optional().default(""),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX_AUTH: z.coerce.number().int().positive().default(20),
+}).superRefine((data, ctx) => {
+  if (data.EMAIL_PROVIDER === "smtp") {
+    const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD"] as const;
+    for (const key of required) {
+      if (!data[key]) {
+        ctx.addIssue({
+          code: "custom",
+          path: [key],
+          message: `${key} is required when EMAIL_PROVIDER=smtp`,
+        });
+      }
+    }
+  }
 });
 
 type RawEnv = z.infer<typeof envSchema>;
@@ -130,6 +147,12 @@ export const env = {
   email: {
     provider: raw.EMAIL_PROVIDER,
     from: raw.EMAIL_FROM,
+    smtp: {
+      host: raw.SMTP_HOST,
+      port: raw.SMTP_PORT ?? 587,
+      user: raw.SMTP_USER,
+      password: raw.SMTP_PASSWORD,
+    },
   },
 
   google: {
