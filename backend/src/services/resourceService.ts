@@ -6,6 +6,7 @@ import {
   toApiResourceFile,
   toApiResourceListItem,
   type ResourceRow,
+  type ResourceSortBy,
 } from '../models/resourceModel';
 import { auditLogModel } from '../models/auditLogModel';
 import { getStorageAdapter } from '../config/config/storage';
@@ -210,6 +211,8 @@ export const resourceService = {
       programmeId?: string;
       subjectId?: string;
       search?: string;
+      q?: string;
+      sortBy: ResourceSortBy;
       page: number;
       pageSize: number;
     },
@@ -226,6 +229,8 @@ export const resourceService = {
       programmeId: filters.programmeId,
       subjectId: filters.subjectId,
       search: filters.search,
+      q: filters.q,
+      sortBy: filters.sortBy,
       limit,
       offset,
     });

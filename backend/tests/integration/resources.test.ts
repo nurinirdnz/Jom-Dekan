@@ -39,8 +39,12 @@ async function createUploadIntent(token: string, overrides: Partial<Record<strin
     });
 }
 
-async function uploadAndConfirm(token: string, buffer: Buffer = PDF_BUFFER) {
-  const intentRes = await createUploadIntent(token, { sizeBytes: buffer.length });
+async function uploadAndConfirm(
+  token: string,
+  buffer: Buffer = PDF_BUFFER,
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  const intentRes = await createUploadIntent(token, { sizeBytes: buffer.length, ...overrides });
   const { uploadUrl } = intentRes.body.data;
   const fileId = intentRes.body.data.file.id;
   const resourceId = intentRes.body.data.resource.id;
@@ -274,6 +278,60 @@ describe("Resources API", () => {
     const downloadRes = await request(app).get(urlRes.body.data.url);
     expect(downloadRes.status).toBe(200);
     expect(downloadRes.body.toString()).toContain("fake pdf content for tests");
+  });
+
+  it("finds resources by keyword search across title and description, ranking title matches first", async () => {
+    if (skip) return;
+    const unique = Date.now();
+    await uploadAndConfirm(ownerAToken, PDF_BUFFER, { title: `Quantum Mechanics Notes ${unique}` });
+    await uploadAndConfirm(ownerAToken, PDF_BUFFER, {
+      title: `Unrelated Resource ${unique}`,
+      description: `Some notes that mention quantum mechanics in passing, ${unique}`,
+    });
+
+    const res = await request(app)
+      .get("/api/v1/resources")
+      .set("Authorization", `Bearer ${ownerBToken}`)
+      .query({ q: `quantum mechanics ${unique}` });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(2);
+    expect(res.body.data[0].title).toContain("Quantum Mechanics Notes");
+  });
+
+  it("orders by relevance rank ahead of the explicit sortBy, using it only as a tiebreaker", async () => {
+    if (skip) return;
+    const unique = Date.now();
+    // Both query terms hit in the title (weight A+A) -> higher rank.
+    await uploadAndConfirm(ownerAToken, PDF_BUFFER, { title: `Zeta Quantum Notes ${unique}` });
+    // "unique" hits the title but "quantum" only hits the description
+    // (weight A+B) -> lower rank than the resource above.
+    await uploadAndConfirm(ownerAToken, PDF_BUFFER, {
+      title: `Aardvark Resource ${unique}`,
+      description: `Some notes that mention quantum here, ${unique}`,
+    });
+
+    // Alphabetically "Aardvark..." sorts before "Zeta...", so if sortBy
+    // were applied ahead of rank, that title order is what we'd see.
+    // Asserting the opposite order proves rank wins, with sortBy only
+    // breaking ties within equal rank.
+    const res = await request(app)
+      .get("/api/v1/resources")
+      .set("Authorization", `Bearer ${ownerBToken}`)
+      .query({ q: `quantum ${unique}`, sortBy: "title" });
+
+    expect(res.status).toBe(200);
+    const titles = res.body.data.map((r: { title: string }) => r.title);
+    expect(titles).toEqual([`Zeta Quantum Notes ${unique}`, `Aardvark Resource ${unique}`]);
+  });
+
+  it("rejects an unknown sortBy value", async () => {
+    if (skip) return;
+    const res = await request(app)
+      .get("/api/v1/resources")
+      .set("Authorization", `Bearer ${ownerBToken}`)
+      .query({ sortBy: "popularity" });
+    expect(res.status).toBe(400);
   });
 
   it("rejects a request body with an unknown field", async () => {

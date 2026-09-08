@@ -7,7 +7,8 @@ export function useResources(params: {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
-  search?: string;
+  q?: string;
+  sortBy?: "newest" | "oldest" | "title";
   page?: number;
   pageSize?: number;
 }) {
@@ -28,8 +29,13 @@ export function useResource(id: string | undefined) {
 export function useUpdateResource() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { title: string; description?: string } }) =>
-      resourceService.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { title: string; description?: string };
+    }) => resourceService.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
   });
 }
@@ -37,8 +43,13 @@ export function useUpdateResource() {
 export function useSetResourceStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, action }: { id: string; action: "ARCHIVE" | "RESTORE" }) =>
-      resourceService.setStatus(id, action),
+    mutationFn: ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: "ARCHIVE" | "RESTORE";
+    }) => resourceService.setStatus(id, action),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
   });
 }
@@ -101,7 +112,11 @@ export function useUploadResource() {
         contentType: input.file.type,
         sizeBytes: input.file.size,
       });
-      await resourceService.uploadFile(intent.uploadUrl, input.file, input.onProgress);
+      await resourceService.uploadFile(
+        intent.uploadUrl,
+        input.file,
+        input.onProgress,
+      );
       return resourceService.confirmUpload(intent.file.id);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
