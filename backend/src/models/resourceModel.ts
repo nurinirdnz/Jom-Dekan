@@ -33,6 +33,8 @@ export interface ResourceListRow extends ResourceRow {
   ready_file_mime_type: string | null;
 }
 
+export type ResourceSortBy = 'newest' | 'oldest' | 'title';
+
 export interface ListResourcesFilters {
   status?: ResourceRow['status'] | ResourceRow['status'][];
   ownerId?: string;
@@ -40,10 +42,17 @@ export interface ListResourcesFilters {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
-  search?: string;
+  q?: string;
+  sortBy: ResourceSortBy;
   limit: number;
   offset: number;
 }
+
+const SORT_BY_SQL: Record<ResourceSortBy, string> = {
+  newest: 'r.created_at DESC',
+  oldest: 'r.created_at ASC',
+  title: 'r.title ASC',
+};
 
 /**
  * Parameterized SQL only, no Express req/res — same rule as
@@ -146,9 +155,23 @@ export const resourceModel = {
     if (filters.facultyId) addCondition('faculty_id = ?', filters.facultyId);
     if (filters.programmeId) addCondition('programme_id = ?', filters.programmeId);
     if (filters.subjectId) addCondition('subject_id = ?', filters.subjectId);
-    if (filters.search) addCondition('title ILIKE ?', `%${filters.search}%`);
+
+    let searchParamIndex: number | null = null;
+    if (filters.q) {
+      addCondition("search_vector @@ websearch_to_tsquery('english', ?)", filters.q);
+      searchParamIndex = values.length;
+    }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Relevance always wins ties, but the caller's explicit sortBy still
+    // governs the rest of the order — a title search still resolves rank
+    // ties alphabetically, not by recency.
+    const orderParts: string[] = [];
+    if (searchParamIndex !== null) {
+      orderParts.push(`ts_rank(r.search_vector, websearch_to_tsquery('english', $${searchParamIndex})) DESC`);
+    }
+    orderParts.push(SORT_BY_SQL[filters.sortBy]);
 
     const countResult = await pool.query<{ count: string }>(
       `SELECT COUNT(*) FROM resources ${whereClause}`,
@@ -166,7 +189,7 @@ export const resourceModel = {
          LIMIT 1
        ) rf ON true
        ${whereClause}
-       ORDER BY r.created_at DESC
+       ORDER BY ${orderParts.join(', ')}
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       dataValues,
     );
