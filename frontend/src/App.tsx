@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Resources from "./pages/Resources";
 import UploadResource from "./pages/UploadResource";
 import ResourceDetail from "./pages/ResourceDetail";
+import { ErrorBoundary } from "./errors/ErrorBoundary";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminFaculties from "./pages/admin/AdminFaculties";
 import AdminProgrammes from "./pages/admin/AdminProgrammes";
@@ -58,7 +59,9 @@ function App() {
             path="/resources/:id"
             element={
               <ProtectedRoute>
-                <ResourceDetail />
+                <ErrorBoundary>
+                  <ResourceDetail />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           />
