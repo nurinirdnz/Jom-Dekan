@@ -1,5 +1,7 @@
 import { useState } from "react";
+import axios from "axios";
 import { useOpportunities } from "../hooks/useOpportunities";
+import type { Opportunity } from "../types/opportunity";
 
 const LISTING_TYPES = ["TUTORING", "STUDY_GROUP", "PROJECT_MENTORSHIP"] as const;
 const MODES = ["ONLINE", "PHYSICAL", "HYBRID"] as const;
@@ -24,10 +26,11 @@ export function Marketplace() {
       await applyToOpportunity({ opportunityId: selectedOpp, coverMessage });
       setSelectedOpp(null);
       setCoverMessage("");
-    } catch (err: any) {
-      alert(
-        err.response?.data?.error?.message || "Failed to submit application",
-      );
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: { message?: string } })?.error?.message
+        : undefined;
+      alert(message || "Failed to submit application");
     }
   };
 
@@ -42,8 +45,11 @@ export function Marketplace() {
         listingType: LISTING_TYPES[0],
         mode: MODES[0],
       });
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || "Failed to post listing");
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: { message?: string } })?.error?.message
+        : undefined;
+      alert(message || "Failed to post listing");
     }
   };
 
@@ -83,7 +89,7 @@ export function Marketplace() {
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {opportunities.map((opp: any) => (
+          {opportunities.map((opp: Opportunity) => (
             <div
               key={opp.id}
               className="bg-white border rounded-xl p-6 shadow-sm flex flex-col justify-between"

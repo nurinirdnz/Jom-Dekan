@@ -1,3 +1,4 @@
+import axios from "axios";
 import { AdminLayout } from "../../layouts/AdminLayout";
 import { useAdminOpportunities } from "../../hooks/useAdminOpportunities";
 import type { Opportunity, OpportunityStatus } from "../../types/opportunity";
@@ -10,8 +11,11 @@ export function AdminOpportunities() {
       opp.status === "active" ? "closed" : "active";
     try {
       await updateStatus({ id: opp.id, status: nextStatus });
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || "Failed to update listing");
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: { message?: string } })?.error?.message
+        : undefined;
+      alert(message || "Failed to update listing");
     }
   };
 
