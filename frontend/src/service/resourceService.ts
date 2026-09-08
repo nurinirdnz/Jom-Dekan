@@ -41,6 +41,7 @@ interface ListResourcesParams {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  search?: string;
   page?: number;
   pageSize?: number;
 }

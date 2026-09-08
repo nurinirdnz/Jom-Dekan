@@ -209,6 +209,7 @@ export const resourceService = {
       facultyId?: string;
       programmeId?: string;
       subjectId?: string;
+      search?: string;
       page: number;
       pageSize: number;
     },
@@ -224,6 +225,7 @@ export const resourceService = {
       facultyId: filters.facultyId,
       programmeId: filters.programmeId,
       subjectId: filters.subjectId,
+      search: filters.search,
       limit,
       offset,
     });

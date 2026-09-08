@@ -40,6 +40,7 @@ export interface ListResourcesFilters {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  search?: string;
   limit: number;
   offset: number;
 }
@@ -145,6 +146,7 @@ export const resourceModel = {
     if (filters.facultyId) addCondition('faculty_id = ?', filters.facultyId);
     if (filters.programmeId) addCondition('programme_id = ?', filters.programmeId);
     if (filters.subjectId) addCondition('subject_id = ?', filters.subjectId);
+    if (filters.search) addCondition('title ILIKE ?', `%${filters.search}%`);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
