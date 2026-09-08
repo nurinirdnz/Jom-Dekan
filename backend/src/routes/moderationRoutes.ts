@@ -5,18 +5,10 @@ import {
   getModerationQueue,
   handleModerationAction,
 } from "../controllers/moderationController";
-import {
-  getOpportunities,
-  createOpportunity,
-  applyToOpportunity,
-} from "../controllers/opportunityController";
+
 import { authenticate } from "../config/middleware/authMiddleware";
 import { validate } from "../config/middleware/validateMiddleware";
 import { moderationActionSchema } from "../validators/moderationValidators";
-import {
-  createOpportunitySchema,
-  applyOpportunitySchema,
-} from "../validators/opportunityValidators";
 
 const router = Router();
 
@@ -112,21 +104,6 @@ router.patch(
   authenticate,
   validate({ body: moderationActionSchema }),
   handleModerationAction,
-);
-
-// Marketplace opportunities
-router.get("/", getOpportunities);
-router.post(
-  "/",
-  authenticate,
-  validate({ body: createOpportunitySchema }),
-  createOpportunity,
-);
-router.post(
-  "/:id/applications",
-  authenticate,
-  validate({ body: applyOpportunitySchema }),
-  applyToOpportunity,
 );
 
 export default router;

@@ -102,14 +102,13 @@ export function createApp(): Express {
   }
 
   app.use("/api/v1", apiRoutes);
+  app.use("/api/v1/opportunities", opportunityRoutes);
+  app.use("/api/v1", moderationRoutes);
   // Also expose /health and /version unversioned for simple infra probes.
   app.use(healthRoutes);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
-
-  app.use("/api/v1/opportunities", opportunityRoutes);
-  app.use("/api/v1", moderationRoutes);
 
   return app;
 }

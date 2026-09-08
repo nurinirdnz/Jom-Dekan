@@ -20,3 +20,7 @@ export const applyOpportunitySchema = z.object({
     .min(10, "Cover message must be at least 10 characters long.")
     .max(2000),
 });
+
+export const updateOpportunityStatusSchema = z.object({
+  status: z.enum(["active", "closed"]),
+});

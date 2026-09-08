@@ -21,6 +21,14 @@ export class OpportunityService {
       coverMessage,
     );
   }
+
+  static async getAllForAdmin() {
+    return await OpportunityModel.getAllForAdmin();
+  }
+
+  static async updateStatus(id: string, status: string) {
+    return await OpportunityModel.updateStatus(id, status);
+  }
 }
 
 export const getOpportunities = async (
@@ -75,6 +83,39 @@ export const applyToOpportunity = async (
         },
       });
     }
+    return next(error);
+  }
+};
+
+export const getAllOpportunitiesForAdmin = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await OpportunityService.getAllForAdmin();
+    return res.json({ data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateOpportunityStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const data = await OpportunityService.updateStatus(id, status);
+    if (!data) {
+      return res
+        .status(404)
+        .json({ error: { code: "NOT_FOUND", message: "Opportunity not found." } });
+    }
+    return res.json({ message: "Opportunity status updated", data });
+  } catch (error) {
     return next(error);
   }
 };

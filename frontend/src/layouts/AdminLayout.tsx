@@ -6,6 +6,8 @@ const links = [
   { to: "/admin/faculties", label: "Faculties" },
   { to: "/admin/programmes", label: "Programmes" },
   { to: "/admin/subjects", label: "Subjects" },
+  { to: "/admin/moderation", label: "Moderation" },
+  { to: "/admin/opportunities", label: "Marketplace Listings" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
