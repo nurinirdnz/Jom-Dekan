@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Resources from "./pages/Resources";
 import UploadResource from "./pages/UploadResource";
 import ResourceDetail from "./pages/ResourceDetail";
+import Favorites from "./pages/Favorites";
 import { ErrorBoundary } from "./errors/ErrorBoundary";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminFaculties from "./pages/admin/AdminFaculties";
@@ -68,6 +69,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <Favorites />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/admin/universities"
             element={

@@ -1,13 +1,37 @@
-import { Link } from 'react-router-dom';
-import { useCurrentUser } from '../hooks/useAuth';
+import { Link } from "react-router-dom";
+import { useCurrentUser } from "../hooks/useAuth";
+
+// const cards = [
+//   { title: 'Browse Resource', desc: null, to: '/resources' },
+//   { title: 'Forum & discussions', desc: 'Milestone 5', to: null },
+//   { title: 'Favorites & collections', desc: 'Milestone 4', to: null },
+//   { title: 'Notifications', desc: 'Milestone 6', to: null },
+//   { title: 'Tutor & opportunities', desc: 'Milestone 7', to: null },
+//   { title: 'Recommendations', desc: 'Milestone 8', to: null },
+// ];
 
 const cards = [
-  { title: 'Browse Resource', desc: null, to: '/resources' },
-  { title: 'Forum & discussions', desc: 'Milestone 5', to: null },
-  { title: 'Favorites & collections', desc: 'Milestone 4', to: null },
-  { title: 'Notifications', desc: 'Milestone 6', to: null },
-  { title: 'Tutor & opportunities', desc: 'Milestone 7', to: null },
-  { title: 'Recommendations', desc: 'Milestone 8', to: null },
+  {
+    title: "Browse Resource",
+    desc: null,
+    blurb: "Upload, browse, and download academic resources →",
+    to: "/resources",
+  },
+  { title: "Forum & discussions", desc: "Milestone 5", blurb: null, to: null },
+  {
+    title: "Favorites & collections",
+    desc: null,
+    blurb: "Resources you've saved for later →",
+    to: "/favorites",
+  },
+  { title: "Notifications", desc: "Milestone 6", blurb: null, to: null },
+  {
+    title: "Tutor & opportunities",
+    desc: "Milestone 7",
+    blurb: null,
+    to: null,
+  },
+  { title: "Recommendations", desc: "Milestone 8", blurb: null, to: null },
 ];
 
 export default function Dashboard() {
@@ -15,10 +39,13 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Welcome{user ? `, ${user.email}` : ''} 👋</h1>
+      <h1 className="text-2xl font-bold text-slate-900">
+        Welcome{user ? `, ${user.email}` : ""} 👋
+      </h1>
       <p className="mt-2 text-slate-600">
-        This is the authenticated dashboard shell. Search, forums, favorites, notifications, and tutor/opportunity
-        pages arrive in later milestones (see <code>docs/implementation-plan.md</code>).
+        This is the authenticated dashboard shell. Search, forums, favorites,
+        notifications, and tutor/opportunity pages arrive in later milestones
+        (see <code>docs/implementation-plan.md</code>).
       </p>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -30,12 +57,20 @@ export default function Dashboard() {
               className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-primary-200 hover:shadow-md"
             >
               <h2 className="font-semibold text-slate-800">{card.title}</h2>
-              <p className="mt-1 text-sm text-primary-700">Upload, browse, and download academic resources →</p>
+              {/* <p className="mt-1 text-sm text-primary-700">
+                Upload, browse, and download academic resources →
+              </p> */}
+              <p className="mt-1 text-sm text-primary-700">{card.blurb}</p>
             </Link>
           ) : (
-            <div key={card.title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div
+              key={card.title}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
               <h2 className="font-semibold text-slate-800">{card.title}</h2>
-              <p className="mt-1 text-sm text-slate-500">Coming in {card.desc}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Coming in {card.desc}
+              </p>
             </div>
           ),
         )}
