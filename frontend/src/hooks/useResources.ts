@@ -7,6 +7,8 @@ export function useResources(params: {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  q?: string;
+  sortBy?: "newest" | "oldest" | "title";
   page?: number;
   pageSize?: number;
 }) {
