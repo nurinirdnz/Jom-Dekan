@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
-import pool from "../src/config/config/db";
+import { pool } from "../src/config/config/db";
 
 const app = createApp();
 

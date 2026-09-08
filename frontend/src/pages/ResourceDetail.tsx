@@ -11,7 +11,12 @@ import {
   useImagePreviewUrl,
 } from "../hooks/useResources";
 import { useCurrentUser } from "../hooks/useAuth";
-import { editResourceFormSchema, type EditResourceFormValues } from "../schemas/resourceSchemas";
+import { FavoriteButton } from "../components/common/FavoriteButton";
+
+import {
+  editResourceFormSchema,
+  type EditResourceFormValues,
+} from "../schemas/resourceSchemas";
 
 export default function ResourceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +31,12 @@ export default function ResourceDetail() {
 
   const { register, handleSubmit, reset } = useForm<EditResourceFormValues>({
     resolver: zodResolver(editResourceFormSchema),
-    values: data ? { title: data.resource.title, description: data.resource.description ?? undefined } : undefined,
+    values: data
+      ? {
+          title: data.resource.title,
+          description: data.resource.description ?? undefined,
+        }
+      : undefined,
   });
 
   const readyFile = data?.files.find((f) => f.status === "READY");
@@ -34,14 +44,26 @@ export default function ResourceDetail() {
   // Hooks must run unconditionally on every render (before the early
   // returns below), so this is fetched here even though it's only
   // rendered further down once `data` is confirmed present.
-  const { data: previewUrl } = useImagePreviewUrl(isImage ? readyFile?.id : undefined);
+  const { data: previewUrl } = useImagePreviewUrl(
+    isImage ? readyFile?.id : undefined,
+  );
 
-  if (isLoading) return <p className="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500">Loading…</p>;
+  if (isLoading)
+    return (
+      <p className="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500">
+        Loading…
+      </p>
+    );
   if (isError || !data)
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
-        <p className="text-sm text-red-600">This resource does not exist, or you don't have access to it.</p>
-        <Link to="/resources" className="mt-2 inline-block text-sm text-primary-700 hover:underline">
+        <p className="text-sm text-red-600">
+          This resource does not exist, or you don't have access to it.
+        </p>
+        <Link
+          to="/resources"
+          className="mt-2 inline-block text-sm text-primary-700 hover:underline"
+        >
           Back to resources
         </Link>
       </div>
@@ -55,7 +77,10 @@ export default function ResourceDetail() {
   const canManage = isOwner || user?.role === "ADMIN";
 
   const onSave = (values: EditResourceFormValues) => {
-    updateResource.mutate({ id: resource.id, data: values }, { onSuccess: () => setIsEditing(false) });
+    updateResource.mutate(
+      { id: resource.id, data: values },
+      { onSuccess: () => setIsEditing(false) },
+    );
   };
 
   const handleDownload = (fileId: string) => {
@@ -65,13 +90,23 @@ export default function ResourceDetail() {
   };
 
   const handleDelete = () => {
-    if (!window.confirm(`Delete "${resource.title}" permanently? This cannot be undone.`)) return;
-    deleteResource.mutate(resource.id, { onSuccess: () => navigate("/resources") });
+    if (
+      !window.confirm(
+        `Delete "${resource.title}" permanently? This cannot be undone.`,
+      )
+    )
+      return;
+    deleteResource.mutate(resource.id, {
+      onSuccess: () => navigate("/resources"),
+    });
   };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link to="/resources" className="text-sm text-primary-700 hover:underline">
+      <Link
+        to="/resources"
+        className="text-sm text-primary-700 hover:underline"
+      >
         ← Back to resources
       </Link>
 
@@ -79,7 +114,10 @@ export default function ResourceDetail() {
         {isEditing ? (
           <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-slate-700"
+              >
                 Title
               </label>
               <input
@@ -89,7 +127,10 @@ export default function ResourceDetail() {
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-slate-700"
+              >
                 Description
               </label>
               <textarea
@@ -122,7 +163,9 @@ export default function ResourceDetail() {
         ) : (
           <>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="text-2xl font-bold text-slate-900">{resource.title}</h1>
+              <h1 className="text-2xl font-bold text-slate-900">
+                {resource.title}
+              </h1>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                   resource.status === "READY"
@@ -135,7 +178,11 @@ export default function ResourceDetail() {
                 {resource.status}
               </span>
             </div>
-            {resource.description && <p className="mt-2 whitespace-pre-wrap text-slate-600">{resource.description}</p>}
+            {resource.description && (
+              <p className="mt-2 whitespace-pre-wrap text-slate-600">
+                {resource.description}
+              </p>
+            )}
 
             {isImage && previewUrl && (
               <img
@@ -146,6 +193,7 @@ export default function ResourceDetail() {
             )}
 
             <div className="mt-6 flex flex-wrap gap-2">
+              <FavoriteButton resourceId={resource.id} />
               {readyFile && (
                 <button
                   type="button"
@@ -170,7 +218,10 @@ export default function ResourceDetail() {
                     onClick={() =>
                       setStatus.mutate({
                         id: resource.id,
-                        action: resource.status === "ARCHIVED" ? "RESTORE" : "ARCHIVE",
+                        action:
+                          resource.status === "ARCHIVED"
+                            ? "RESTORE"
+                            : "ARCHIVE",
                       })
                     }
                     disabled={setStatus.isPending}

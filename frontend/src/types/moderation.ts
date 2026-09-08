@@ -1,3 +1,11 @@
+export interface Notification {
+  id: string;
+  type: string;
+  payload: { message?: string; [key: string]: unknown };
+  read_at: string | null;
+  created_at: string;
+}
+
 export type ModerationEntityType = "resource" | "report";
 
 export interface ModerationQueueItem {
