@@ -4,6 +4,7 @@ import authRoutes from "./authRoutes";
 import taxonomyRoutes from "./taxonomyRoutes";
 import resourceRoutes from "./resourceRoutes";
 import favoriteRoutes from "./favoriteRoutes";
+import forumRoutes from "./forumRoutes";
 
 /**
  * All product routes are mounted under /api/v1. System routes
@@ -17,5 +18,6 @@ router.use("/auth", authRoutes);
 router.use("/taxonomy", taxonomyRoutes);
 router.use("/resources", resourceRoutes);
 router.use("/favorites", favoriteRoutes);
+router.use("/forum", forumRoutes);
 
 export default router;

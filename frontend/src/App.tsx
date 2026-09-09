@@ -12,6 +12,9 @@ import Resources from "./pages/Resources";
 import UploadResource from "./pages/UploadResource";
 import ResourceDetail from "./pages/ResourceDetail";
 import Favorites from "./pages/Favorites";
+import Forum from "./pages/Forum";
+import ForumPostDetail from "./pages/ForumPostDetail";
+
 import { ErrorBoundary } from "./errors/ErrorBoundary";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminFaculties from "./pages/admin/AdminFaculties";
@@ -75,6 +78,23 @@ function App() {
             element={
               <ProtectedRoute>
                 <Favorites />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/forum"
+            element={
+              <ProtectedRoute>
+                <Forum />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forum/:id"
+            element={
+              <ProtectedRoute>
+                <ForumPostDetail />
               </ProtectedRoute>
             }
           />

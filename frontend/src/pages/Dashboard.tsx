@@ -17,7 +17,14 @@ const cards = [
     blurb: "Upload, browse, and download academic resources →",
     to: "/resources",
   },
-  { title: "Forum & discussions", desc: "Milestone 5", blurb: null, to: null },
+  // { title: "Forum & discussions", desc: "Milestone 5", blurb: null, to: null },
+  {
+    title: "Forum & discussions",
+    desc: null,
+    blurb: "Ask questions, share discussion, and help each other out →",
+    to: "/forum",
+  },
+
   {
     title: "Favorites & collections",
     desc: null,
