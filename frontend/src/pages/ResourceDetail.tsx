@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -54,18 +54,20 @@ export default function ResourceDetail() {
         Loading…
       </p>
     );
+
   if (isError || !data)
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
         <p className="text-sm text-red-600">
           This resource does not exist, or you don't have access to it.
         </p>
-        <Link
-          to="/resources"
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
           className="mt-2 inline-block text-sm text-primary-700 hover:underline"
         >
-          Back to resources
-        </Link>
+          ← Back
+        </button>
       </div>
     );
 
@@ -103,12 +105,13 @@ export default function ResourceDetail() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link
-        to="/resources"
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
         className="text-sm text-primary-700 hover:underline"
       >
-        ← Back to resources
-      </Link>
+        ← Back
+      </button>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6">
         {isEditing ? (
