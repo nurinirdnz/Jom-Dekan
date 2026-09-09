@@ -6,7 +6,16 @@ export class OpportunityService {
     return await OpportunityModel.getAllActive();
   }
 
-  static async createOpportunity(ownerId: string, data: any) {
+  static async createOpportunity(
+    ownerId: string,
+    data: {
+      title: string;
+      description: string;
+      subjectId?: string;
+      listingType: string;
+      mode: string;
+    },
+  ) {
     return await OpportunityModel.create(ownerId, data);
   }
 
@@ -74,8 +83,8 @@ export const applyToOpportunity = async (
     return res
       .status(201)
       .json({ message: "Application submitted successfully", data });
-  } catch (error: any) {
-    if (error.code === "23505") {
+  } catch (error) {
+    if (typeof error === "object" && error !== null && (error as { code?: string }).code === "23505") {
       return res.status(409).json({
         error: {
           code: "DUPLICATE_APPLICATION",

@@ -3,6 +3,7 @@ import healthRoutes from "./healthRoutes";
 import authRoutes from "./authRoutes";
 import taxonomyRoutes from "./taxonomyRoutes";
 import resourceRoutes from "./resourceRoutes";
+import favoriteRoutes from "./favoriteRoutes";
 
 /**
  * All product routes are mounted under /api/v1. System routes
@@ -15,5 +16,6 @@ router.use(healthRoutes);
 router.use("/auth", authRoutes);
 router.use("/taxonomy", taxonomyRoutes);
 router.use("/resources", resourceRoutes);
+router.use("/favorites", favoriteRoutes);
 
 export default router;

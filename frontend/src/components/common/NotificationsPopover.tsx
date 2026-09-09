@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useModeration } from "../../hooks/useModeration";
+import type { Notification } from "../../types/moderation";
 
 export function NotificationsPopover() {
   const { notifications, isLoadingNotifications, markAsRead } = useModeration();
   const [isOpen, setIsOpen] = useState(false);
 
-  const unreadCount = notifications.filter((n: any) => !n.read_at).length;
+  const unreadCount = notifications.filter((n: Notification) => !n.read_at).length;
 
   const handleMarkRead = async (id: string) => {
     try {
       await markAsRead(id);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to mark notification as read", err);
     }
   };
@@ -59,7 +60,7 @@ export function NotificationsPopover() {
                 No notifications found.
               </div>
             ) : (
-              notifications.map((n: any) => (
+              notifications.map((n: Notification) => (
                 <div
                   key={n.id}
                   className={`p-3 text-xs flex justify-between items-start gap-2 ${n.read_at ? "bg-white text-stone-600" : "bg-blue-50/50 text-stone-900 font-medium"}`}

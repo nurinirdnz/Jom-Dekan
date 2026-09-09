@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { moderationService } from "../service/moderationService";
 
+interface DropdownNotification {
+  id: string;
+  title: string;
+  message: string;
+  read_at: string | null;
+}
+
 export function NotificationsDropdown() {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [notifications, setNotifications] = useState<DropdownNotification[]>([]);
 
   useEffect(() => {
     moderationService
