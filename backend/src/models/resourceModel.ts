@@ -44,7 +44,6 @@ export interface ListResourcesFilters {
   subjectId?: string;
   q?: string;
   sortBy: ResourceSortBy;
-  search?: string;
   limit: number;
   offset: number;
 }
@@ -176,6 +175,11 @@ export const resourceModel = {
     if (filters.programmeId)
       addCondition("programme_id = ?", filters.programmeId);
     if (filters.subjectId) addCondition("subject_id = ?", filters.subjectId);
+    if (filters.ownerId) addCondition('owner_id = ?', filters.ownerId);
+    if (filters.universityId) addCondition('university_id = ?', filters.universityId);
+    if (filters.facultyId) addCondition('faculty_id = ?', filters.facultyId);
+    if (filters.programmeId) addCondition('programme_id = ?', filters.programmeId);
+    if (filters.subjectId) addCondition('subject_id = ?', filters.subjectId);
 
     let searchParamIndex: number | null = null;
     if (filters.q) {

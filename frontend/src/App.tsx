@@ -18,6 +18,9 @@ import AdminProgrammes from "./pages/admin/AdminProgrammes";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import NotFound from "./pages/NotFound";
 import "./App.css";
+import Marketplace from "./pages/Marketplace";
+import AdminModerationQueue from "./pages/admin/AdminModerationQueue";
+import AdminOpportunities from "./pages/admin/AdminOpportunities";
 
 function App() {
   useSessionBootstrap();
@@ -97,6 +100,31 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/marketplace"
+            element={
+              <ProtectedRoute>
+                <Marketplace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/moderation"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminModerationQueue />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/opportunities"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminOpportunities />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>

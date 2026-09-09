@@ -3,13 +3,14 @@ import { pool } from "../config/config/db";
 export class OpportunityModel {
   static async getAllActive() {
     const query = `
-            SELECT o.*, u.name as owner_name, s.code as subject_code, s.name as subject_name
+            SELECT o.*, up.display_name as owner_name, s.code as subject_code, s.name as subject_name
             FROM opportunities o
-            LEFT JOIN users u ON o.owner_id = u.id
+            LEFT JOIN user_profiles up ON o.owner_id = up.user_id
             LEFT JOIN subjects s ON o.subject_id = s.id
             WHERE o.status = 'active'
             ORDER BY o.created_at DESC
         `;
+
     const result = await pool.query(query);
     return result.rows;
   }
@@ -53,6 +54,27 @@ export class OpportunityModel {
         `;
     const values = [opportunityId, applicantId, coverMessage];
     const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  static async getAllForAdmin() {
+    const query = `
+            SELECT o.*, up.display_name as owner_name, s.code as subject_code, s.name as subject_name
+            FROM opportunities o
+            LEFT JOIN user_profiles up ON o.owner_id = up.user_id
+            LEFT JOIN subjects s ON o.subject_id = s.id
+            ORDER BY o.created_at DESC
+        `;
+    const result = await pool.query(query);
+    return result.rows;
+  }
+
+  static async updateStatus(id: string, status: string) {
+    const query = `
+            UPDATE opportunities SET status = $1 WHERE id = $2
+            RETURNING *
+        `;
+    const result = await pool.query(query, [status, id]);
     return result.rows[0];
   }
 }

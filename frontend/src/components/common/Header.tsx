@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { GraduationCap } from "lucide-react";
 import { useCurrentUser, useLogout } from "../../hooks/useAuth";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 export function Header() {
   const user = useCurrentUser();
@@ -29,11 +30,18 @@ export function Header() {
                 </Link>
               )}
               <Link
+                to="/marketplace"
+                className="text-slate-700 hover:text-primary-700"
+              >
+                Marketplace
+              </Link>
+              <Link
                 to="/dashboard"
                 className="text-slate-700 hover:text-primary-700"
               >
                 Dashboard
               </Link>
+              <NotificationsPopover />
               <button
                 type="button"
                 onClick={() => logout.mutate()}

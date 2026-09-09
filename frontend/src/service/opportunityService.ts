@@ -2,7 +2,7 @@ import axiosInstance from "../api/axiosInstance";
 
 export const opportunityService = {
   async getOpportunities() {
-    const { data } = await axiosInstance.get("/api/v1/opportunities");
+    const { data } = await axiosInstance.get("/opportunities");
     return data.data;
   },
   async createOpportunity(payload: {
@@ -12,14 +12,24 @@ export const opportunityService = {
     listingType: string;
     mode: string;
   }) {
-    const { data } = await axiosInstance.post("/api/v1/opportunities", payload);
+    const { data } = await axiosInstance.post("/opportunities", payload);
     return data.data;
   },
   async applyToOpportunity(opportunityId: string, coverMessage: string) {
     const { data } = await axiosInstance.post(
-      `/api/v1/opportunities/${opportunityId}/applications`,
+      `/opportunities/${opportunityId}/applications`,
       { coverMessage },
     );
+    return data.data;
+  },
+  async getAllOpportunitiesAdmin() {
+    const { data } = await axiosInstance.get("/opportunities/admin/all");
+    return data.data;
+  },
+  async updateOpportunityStatus(id: string, status: "active" | "closed") {
+    const { data } = await axiosInstance.patch(`/opportunities/${id}/status`, {
+      status,
+    });
     return data.data;
   },
 };

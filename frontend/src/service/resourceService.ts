@@ -48,7 +48,6 @@ interface ListResourcesParams {
   subjectId?: string;
   q?: string;
   sortBy?: "newest" | "oldest" | "title";
-  search?: string;
   page?: number;
   pageSize?: number;
 }

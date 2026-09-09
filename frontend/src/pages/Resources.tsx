@@ -128,7 +128,7 @@ export default function Resources() {
       </div>
 
       {user && (
-        <div className="mt-4 flex gap-2 text-sm">
+        <div className="mt-6 flex gap-2 text-sm">
           <button
             type="button"
             onClick={() => {
@@ -237,11 +237,7 @@ export default function Resources() {
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
+          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading…</p>
         ) : isError ? (
           <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-red-600">
             Could not load resources.
