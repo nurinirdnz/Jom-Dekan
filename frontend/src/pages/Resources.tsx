@@ -21,13 +21,19 @@ function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
   // Each card fetches its own short-lived signed URL — the backend
   // re-checks visibility on every request, so there's no shortcut that
   // skips that check just because this is a thumbnail, not a download.
-  const { data: previewUrl, isLoading } = useImagePreviewUrl(isImage ? (resource.readyFileId ?? undefined) : undefined);
+  const { data: previewUrl, isLoading } = useImagePreviewUrl(
+    isImage ? (resource.readyFileId ?? undefined) : undefined,
+  );
 
   return (
     <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100">
       {isImage ? (
         previewUrl ? (
-          <img src={previewUrl} alt={resource.title} className="h-full w-full object-cover" />
+          <img
+            src={previewUrl}
+            alt={resource.title}
+            className="h-full w-full object-cover"
+          />
         ) : isLoading ? (
           <div className="h-full w-full animate-pulse bg-slate-200" />
         ) : (
@@ -114,7 +120,8 @@ export default function Resources() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Academic Resources</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Browse notes, past papers, and other academic resources shared by students.
+            Browse notes, past papers, and other academic resources shared by
+            students.
           </p>
         </div>
         <Link
@@ -134,7 +141,9 @@ export default function Resources() {
               setPage(1);
             }}
             className={`rounded-full px-4 py-1.5 font-medium ${
-              !mine ? "bg-primary-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              !mine
+                ? "bg-primary-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
             All resources
@@ -146,7 +155,9 @@ export default function Resources() {
               setPage(1);
             }}
             className={`rounded-full px-4 py-1.5 font-medium ${
-              mine ? "bg-primary-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              mine
+                ? "bg-primary-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
             My uploads
@@ -248,12 +259,20 @@ export default function Resources() {
                 <div className="flex flex-col p-5">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="font-semibold text-slate-800">{r.title}</h2>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}
+                    >
                       {r.status}
                     </span>
                   </div>
-                  {r.description && <p className="mt-2 line-clamp-2 text-sm text-slate-500">{r.description}</p>}
-                  <p className="mt-3 text-xs text-slate-400">Added {new Date(r.createdAt).toLocaleDateString()}</p>
+                  {r.description && (
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                      {r.description}
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs text-slate-400">
+                    Added {new Date(r.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               </Link>
             ))}

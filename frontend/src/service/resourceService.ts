@@ -1,5 +1,10 @@
 import axiosInstance from "../api/axiosInstance";
-import type { Resource, ResourceFile, ResourceListItem, ResourceListMeta } from "../types/resource";
+import type {
+  Resource,
+  ResourceFile,
+  ResourceListItem,
+  ResourceListMeta,
+} from "../types/resource";
 
 /**
  * The backend returns upload/download URLs as a path already prefixed
@@ -48,53 +53,89 @@ interface ListResourcesParams {
 }
 
 export const resourceService = {
-  createUploadIntent: async (data: UploadIntentInput): Promise<UploadIntentResult> => {
-    const res = await axiosInstance.post<{ data: UploadIntentResult }>("/resources/upload-intent", data);
-    return res.data.data;
-  },
-
-  uploadFile: async (uploadUrl: string, file: File, onProgress?: (percent: number) => void): Promise<ResourceFile> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    // Override the instance's default JSON header so the browser sets
-    // the multipart boundary itself; the auth interceptor still runs.
-    const res = await axiosInstance.put<{ data: ResourceFile }>(toAbsoluteApiUrl(uploadUrl), formData, {
-      headers: { "Content-Type": undefined },
-      onUploadProgress: (event) => {
-        if (onProgress && event.total) {
-          onProgress(Math.round((event.loaded / event.total) * 100));
-        }
-      },
-    });
-    return res.data.data;
-  },
-
-  confirmUpload: async (fileId: string): Promise<{ resource: Resource; file: ResourceFile }> => {
-    const res = await axiosInstance.post<{ data: { resource: Resource; file: ResourceFile } }>(
-      `/resources/files/${fileId}/confirm`,
+  createUploadIntent: async (
+    data: UploadIntentInput,
+  ): Promise<UploadIntentResult> => {
+    const res = await axiosInstance.post<{ data: UploadIntentResult }>(
+      "/resources/upload-intent",
+      data,
     );
     return res.data.data;
   },
 
-  list: async (params: ListResourcesParams): Promise<{ data: ResourceListItem[]; meta: ResourceListMeta }> => {
-    const res = await axiosInstance.get<{ data: ResourceListItem[]; meta: ResourceListMeta }>("/resources", {
+  uploadFile: async (
+    uploadUrl: string,
+    file: File,
+    onProgress?: (percent: number) => void,
+  ): Promise<ResourceFile> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    // Override the instance's default JSON header so the browser sets
+    // the multipart boundary itself; the auth interceptor still runs.
+    const res = await axiosInstance.put<{ data: ResourceFile }>(
+      toAbsoluteApiUrl(uploadUrl),
+      formData,
+      {
+        headers: { "Content-Type": undefined },
+        onUploadProgress: (event) => {
+          if (onProgress && event.total) {
+            onProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        },
+      },
+    );
+    return res.data.data;
+  },
+
+  confirmUpload: async (
+    fileId: string,
+  ): Promise<{ resource: Resource; file: ResourceFile }> => {
+    const res = await axiosInstance.post<{
+      data: { resource: Resource; file: ResourceFile };
+    }>(`/resources/files/${fileId}/confirm`);
+    return res.data.data;
+  },
+
+  list: async (
+    params: ListResourcesParams,
+  ): Promise<{ data: ResourceListItem[]; meta: ResourceListMeta }> => {
+    const res = await axiosInstance.get<{
+      data: ResourceListItem[];
+      meta: ResourceListMeta;
+    }>("/resources", {
       params,
     });
     return res.data;
   },
 
-  getById: async (id: string): Promise<{ resource: Resource; files: ResourceFile[] }> => {
-    const res = await axiosInstance.get<{ data: { resource: Resource; files: ResourceFile[] } }>(`/resources/${id}`);
+  getById: async (
+    id: string,
+  ): Promise<{ resource: Resource; files: ResourceFile[] }> => {
+    const res = await axiosInstance.get<{
+      data: { resource: Resource; files: ResourceFile[] };
+    }>(`/resources/${id}`);
     return res.data.data;
   },
 
-  update: async (id: string, data: { title: string; description?: string }): Promise<Resource> => {
-    const res = await axiosInstance.put<{ data: Resource }>(`/resources/${id}`, data);
+  update: async (
+    id: string,
+    data: { title: string; description?: string },
+  ): Promise<Resource> => {
+    const res = await axiosInstance.put<{ data: Resource }>(
+      `/resources/${id}`,
+      data,
+    );
     return res.data.data;
   },
 
-  setStatus: async (id: string, action: "ARCHIVE" | "RESTORE"): Promise<Resource> => {
-    const res = await axiosInstance.patch<{ data: Resource }>(`/resources/${id}/status`, { action });
+  setStatus: async (
+    id: string,
+    action: "ARCHIVE" | "RESTORE",
+  ): Promise<Resource> => {
+    const res = await axiosInstance.patch<{ data: Resource }>(
+      `/resources/${id}/status`,
+      { action },
+    );
     return res.data.data;
   },
 
@@ -103,7 +144,9 @@ export const resourceService = {
   },
 
   getDownloadUrl: async (fileId: string): Promise<string> => {
-    const res = await axiosInstance.get<{ data: { url: string } }>(`/resources/files/${fileId}/download-url`);
+    const res = await axiosInstance.get<{ data: { url: string } }>(
+      `/resources/files/${fileId}/download-url`,
+    );
     return toAbsoluteApiUrl(res.data.data.url);
   },
 };
