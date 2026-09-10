@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FileText, ImageOff } from "lucide-react";
 import { useResources, useImagePreviewUrl } from "../hooks/useResources";
 import { useCurrentUser } from "../hooks/useAuth";
 import { useUniversities, useFaculties, useProgrammes, useSubjects } from "../hooks/useTaxonomy";
+import { ResourcesPageSkeleton } from "../components/common/ResourcesPageSkeleton";
 import type { ResourceListItem } from "../types/resource";
 
 const PAGE_SIZE = 12;
@@ -47,9 +48,13 @@ function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
 
 export default function Resources() {
   const user = useCurrentUser();
-  const [mine, setMine] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [q, setQ] = useState<string | undefined>(undefined);
+  // Lets the header search bar (?search=) and the "My Uploads" profile
+  // menu item (?mine=true) deep-link here with real state instead of
+  // needing their own pages for the same data.
+  const [searchParams] = useSearchParams();
+  const [mine, setMine] = useState(searchParams.get("mine") === "true");
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
+  const [q, setQ] = useState<string | undefined>(searchParams.get("search") ?? undefined);
   const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [universityId, setUniversityId] = useState<string | undefined>(undefined);
   const [facultyId, setFacultyId] = useState<string | undefined>(undefined);
@@ -110,10 +115,10 @@ export default function Resources() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-[18px] py-[22px]">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Resources</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Academic Resources</h1>
           <p className="mt-1 text-sm text-slate-500">
             Browse notes, past papers, and other academic resources shared by
             students.
@@ -237,9 +242,9 @@ export default function Resources() {
 
       <div className="mt-6">
         {isLoading ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading…</p>
+          <ResourcesPageSkeleton count={PAGE_SIZE} />
         ) : isError ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-red-600">
+          <p className="rounded-2xl border border-[#ECEBF7] bg-white p-4 text-sm text-red-600">
             Could not load resources.
           </p>
         ) : resources.length > 0 ? (
@@ -248,7 +253,7 @@ export default function Resources() {
               <Link
                 key={r.id}
                 to={`/resources/${r.id}`}
-                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-primary-200 hover:shadow-md"
+                className="flex flex-col overflow-hidden rounded-2xl border border-[#ECEBF7] bg-white shadow-sm transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
               >
                 <ResourceThumbnail resource={r} />
                 <div className="flex flex-col p-5">
@@ -273,7 +278,7 @@ export default function Resources() {
             ))}
           </div>
         ) : (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+          <p className="rounded-2xl border border-[#ECEBF7] bg-white p-4 text-sm text-slate-500">
             {q
               ? "No resources match your search."
               : mine

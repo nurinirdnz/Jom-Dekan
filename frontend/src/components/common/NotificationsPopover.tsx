@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Bell } from "lucide-react";
 import { useModeration } from "../../hooks/useModeration";
 import type { Notification } from "../../types/moderation";
 
 export function NotificationsPopover() {
   const { notifications, isLoadingNotifications, markAsRead } = useModeration();
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n: Notification) => !n.read_at).length;
 
@@ -16,68 +19,67 @@ export function NotificationsPopover() {
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    function handlePointerDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-stone-600 hover:text-stone-900 focus:outline-none"
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
         aria-label="Notifications"
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#ECEBF7] text-slate-500 transition motion-safe:duration-150 hover:bg-slate-50 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+        <Bell className="h-5 w-5" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
-            {unreadCount}
-          </span>
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#E8543F]" aria-hidden="true" />
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="p-3 bg-stone-100 border-b flex justify-between items-center text-sm font-bold text-stone-700">
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-[#ECEBF7] bg-white shadow-xl motion-safe:animate-[fadeIn_150ms_ease-out]">
+          <div className="flex items-center justify-between border-b border-[#F1F0FA] bg-[#F8F8FD] px-4 py-3 text-sm font-bold text-slate-700">
             <span>Notifications</span>
-            <span className="text-xs text-stone-500">{unreadCount} unread</span>
+            <span className="text-xs font-semibold text-primary-600">{unreadCount} unread</span>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y">
+          <div className="max-h-80 overflow-y-auto divide-y divide-[#F4F3FB]">
             {isLoadingNotifications ? (
-              <div className="p-4 text-center text-xs text-stone-500">
-                Loading notifications...
-              </div>
+              <p className="p-4 text-center text-xs text-slate-400">Loading…</p>
             ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-xs text-stone-500">
-                No notifications found.
-              </div>
+              <p className="p-4 text-center text-xs text-slate-400">No notifications yet.</p>
             ) : (
-              notifications.map((n: Notification) => (
+              notifications.slice(0, 6).map((n: Notification) => (
                 <div
                   key={n.id}
-                  className={`p-3 text-xs flex justify-between items-start gap-2 ${n.read_at ? "bg-white text-stone-600" : "bg-blue-50/50 text-stone-900 font-medium"}`}
+                  className={`flex items-start justify-between gap-2 px-4 py-3 text-xs ${n.read_at ? "text-slate-500" : "bg-primary-50/60 font-medium text-slate-800"}`}
                 >
-                  <div>
-                    <p>{n.payload?.message || n.type}</p>
-                    <span className="text-[10px] text-stone-400 mt-1 block">
-                      {new Date(n.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                  <div className="min-w-0">
+                    <p className="truncate">{n.payload?.message || n.type}</p>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">
+                      {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                   {!n.read_at && (
                     <button
+                      type="button"
                       onClick={() => handleMarkRead(n.id)}
-                      className="text-blue-600 hover:underline shrink-0 text-[10px]"
+                      className="shrink-0 text-[10px] font-semibold text-primary-600 hover:underline"
                     >
                       Mark read
                     </button>
@@ -86,6 +88,14 @@ export function NotificationsPopover() {
               ))
             )}
           </div>
+
+          <Link
+            to="/notifications"
+            onClick={() => setIsOpen(false)}
+            className="block border-t border-[#F1F0FA] px-4 py-2.5 text-center text-xs font-semibold text-primary-600 hover:bg-primary-50"
+          >
+            View all notifications
+          </Link>
         </div>
       )}
     </div>
