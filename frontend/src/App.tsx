@@ -25,6 +25,8 @@ import "./App.css";
 import Marketplace from "./pages/Marketplace";
 import AdminModerationQueue from "./pages/admin/AdminModerationQueue";
 import AdminOpportunities from "./pages/admin/AdminOpportunities";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
 
 function App() {
   useSessionBootstrap();
@@ -152,6 +154,23 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <AdminOpportunities />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:id"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminUserDetail />
               </ProtectedRoute>
             }
           />
