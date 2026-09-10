@@ -18,7 +18,7 @@ export function useLogin() {
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
       queryClient.invalidateQueries();
-      navigate('/dashboard');
+      navigate(data.user.role === 'ADMIN' ? '/admin/universities' : '/dashboard');
     },
   });
 }
@@ -31,7 +31,7 @@ export function useRegister() {
     mutationFn: (values: RegisterFormValues) => authService.register(values),
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
-      navigate('/dashboard');
+      navigate(data.user.role === 'ADMIN' ? '/admin/universities' : '/dashboard');
     },
   });
 }
