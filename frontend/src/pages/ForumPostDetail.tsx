@@ -33,13 +33,13 @@ export default function ForumPostDetail() {
 
   if (isLoading)
     return (
-      <p className="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500">
+      <p className="mx-auto max-w-3xl px-[18px] py-[22px] text-sm text-slate-500">
         Loading…
       </p>
     );
   if (isError || !post)
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
+      <div className="mx-auto max-w-3xl px-[18px] py-[22px]">
         <p className="text-sm text-red-600">
           This post does not exist, or it has been deleted.
         </p>
@@ -47,7 +47,7 @@ export default function ForumPostDetail() {
           to="/forum"
           className="mt-2 inline-block text-sm text-primary-700 hover:underline"
         >
-          Back to forum
+          Back to discussions
         </Link>
       </div>
     );
@@ -103,12 +103,12 @@ export default function ForumPostDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-3xl px-[18px] py-[22px]">
       <Link to="/forum" className="text-sm text-primary-700 hover:underline">
-        ← Back to forum
+        ← Back to discussions
       </Link>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6">
+      <div className="mt-4 rounded-2xl border border-[#ECEBF7] bg-white p-6">
         {isEditing ? (
           <form onSubmit={handleSaveEdit} className="flex flex-col gap-4">
             <div>
@@ -227,7 +227,7 @@ export default function ForumPostDetail() {
             return (
               <div
                 key={comment.id}
-                className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4"
+                className="flex gap-3 rounded-2xl border border-[#ECEBF7] bg-white p-4"
               >
                 <VoteButtons
                   targetType="forum_comment"
@@ -296,7 +296,7 @@ export default function ForumPostDetail() {
             );
           })}
           {(comments ?? []).length === 0 && (
-            <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+            <p className="rounded-2xl border border-[#ECEBF7] bg-white p-4 text-sm text-slate-500">
               No comments yet — be the first to reply.
             </p>
           )}

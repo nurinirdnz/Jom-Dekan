@@ -1,0 +1,50 @@
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "USER" | "ADMIN";
+  status: string;
+  createdAt: string;
+  postCount: number;
+  commentCount: number;
+  likesReceived: number;
+}
+
+export interface AdminUserProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "USER" | "ADMIN";
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminUserResource {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminUserForumActivity {
+  type: "post" | "comment";
+  id: string;
+  postId: string;
+  title: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export interface AdminUserApplication {
+  id: string;
+  opportunityId: string;
+  opportunityTitle: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface PaginatedMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+}

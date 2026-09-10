@@ -43,7 +43,7 @@ export default function UploadResource() {
       : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-[18px] py-[22px]">
       <h1 className="text-2xl font-bold text-slate-900">Upload a resource</h1>
       <p className="mt-1 text-sm text-slate-500">
         PDF, JPEG, or PNG only, up to 20MB. Every file is checked by its actual content before it's accepted — not
@@ -66,7 +66,7 @@ export default function UploadResource() {
       )}
 
       <form
-        className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6"
+        className="mt-6 flex flex-col gap-4 rounded-[22px] border border-[#ECEBF7] bg-white p-6"
         onSubmit={handleSubmit(onSubmit)}
         noValidate
       >

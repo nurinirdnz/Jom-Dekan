@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
+import { DashboardLayout } from "./layouts/DashboardLayout";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { useSessionBootstrap } from "./hooks/useSessionBootstrap";
 import Landing from "./pages/Landing";
@@ -16,6 +17,7 @@ import ResourceDetail from "./pages/ResourceDetail";
 import Favorites from "./pages/Favorites";
 import Forum from "./pages/Forum";
 import ForumPostDetail from "./pages/ForumPostDetail";
+import Notifications from "./pages/Notifications";
 
 import { ErrorBoundary } from "./errors/ErrorBoundary";
 import AdminUniversities from "./pages/admin/AdminUniversities";
@@ -27,149 +29,261 @@ import "./App.css";
 import Marketplace from "./pages/Marketplace";
 import AdminModerationQueue from "./pages/admin/AdminModerationQueue";
 import AdminOpportunities from "./pages/admin/AdminOpportunities";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
 
 function App() {
   useSessionBootstrap();
 
   return (
     <BrowserRouter>
-      <MainLayout>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
+      <Routes>
+        {/* Public marketing pages keep the normal document-scrolling
+            MainLayout shell (sticky header, footer, page scrolls). */}
+        <Route
+          path="/"
+          element={
+            <MainLayout>
+              <Landing />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <MainLayout>
+              <Login />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <MainLayout>
+              <Register />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <MainLayout>
+              <ForgotPassword />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <MainLayout>
+              <ResetPassword />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <MainLayout>
+              <VerifyEmail />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resources"
-            element={
-              <ProtectedRoute>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/resources"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <Resources />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resources/upload"
-            element={
-              <ProtectedRoute>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/resources/upload"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <UploadResource />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resources/:id"
-            element={
-              <ProtectedRoute>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/resources/:id"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <ErrorBoundary>
                   <ResourceDetail />
                 </ErrorBoundary>
-              </ProtectedRoute>
-            }
-          />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/favorites"
-            element={
-              <ProtectedRoute>
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <Favorites />
-              </ProtectedRoute>
-            }
-          />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/forum"
-            element={
-              <ProtectedRoute>
+        <Route
+          path="/forum"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <Forum />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/forum/:id"
-            element={
-              <ProtectedRoute>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/forum/:id"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
                 <ForumPostDetail />
-              </ProtectedRoute>
-            }
-          />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route
-            path="/admin/universities"
-            element={
-              <ProtectedRoute requireAdmin>
+        <Route
+          path="/admin/universities"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
                 <AdminUniversities />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/faculties"
-            element={
-              <ProtectedRoute requireAdmin>
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/faculties"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
                 <AdminFaculties />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/programmes"
-            element={
-              <ProtectedRoute requireAdmin>
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/programmes"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
                 <AdminProgrammes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/subjects"
-            element={
-              <ProtectedRoute requireAdmin>
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/subjects"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
                 <AdminSubjects />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/marketplace"
-            element={
-              <ProtectedRoute>
-                <Marketplace />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/moderation"
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminModerationQueue />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/opportunities"
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminOpportunities />
-              </ProtectedRoute>
-            }
-          />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Profile />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Notifications />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </MainLayout>
+        <Route
+          path="/marketplace"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <Marketplace />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/moderation"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
+                <AdminModerationQueue />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/opportunities"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
+                <AdminOpportunities />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
+                <AdminUsers />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users/:id"
+          element={
+            <ProtectedRoute requireAdmin>
+              <MainLayout>
+                <AdminUserDetail />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <MainLayout>
+              <NotFound />
+            </MainLayout>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

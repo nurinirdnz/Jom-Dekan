@@ -1,4 +1,4 @@
-import { pool } from '../config/config/db';
+import { pool } from "../config/config/db";
 
 export interface ResourceRow {
   id: string;
@@ -9,7 +9,7 @@ export interface ResourceRow {
   subject_id: string | null;
   title: string;
   description: string | null;
-  status: 'PENDING' | 'READY' | 'ARCHIVED' | 'FAILED';
+  status: "PENDING" | "READY" | "ARCHIVED" | "FAILED";
   created_at: Date;
   updated_at: Date;
 }
@@ -23,7 +23,7 @@ export interface ResourceFileRow {
   detected_mime_type: string | null;
   size_bytes: string; // BIGINT comes back as string from pg
   checksum_sha256: string | null;
-  status: 'PENDING' | 'UPLOADED' | 'READY' | 'FAILED';
+  status: "PENDING" | "UPLOADED" | "READY" | "FAILED";
   created_at: Date;
   updated_at: Date;
 }
@@ -33,10 +33,10 @@ export interface ResourceListRow extends ResourceRow {
   ready_file_mime_type: string | null;
 }
 
-export type ResourceSortBy = 'newest' | 'oldest' | 'title';
+export type ResourceSortBy = "newest" | "oldest" | "title";
 
 export interface ListResourcesFilters {
-  status?: ResourceRow['status'] | ResourceRow['status'][];
+  status?: ResourceRow["status"] | ResourceRow["status"][];
   ownerId?: string;
   universityId?: string;
   facultyId?: string;
@@ -49,9 +49,9 @@ export interface ListResourcesFilters {
 }
 
 const SORT_BY_SQL: Record<ResourceSortBy, string> = {
-  newest: 'r.created_at DESC',
-  oldest: 'r.created_at ASC',
-  title: 'r.title ASC',
+  newest: "r.created_at DESC",
+  oldest: "r.created_at ASC",
+  title: "r.title ASC",
 };
 
 /**
@@ -87,7 +87,10 @@ export const resourceModel = {
   },
 
   async findById(id: string): Promise<ResourceRow | null> {
-    const result = await pool.query<ResourceRow>(`SELECT * FROM resources WHERE id = $1`, [id]);
+    const result = await pool.query<ResourceRow>(
+      `SELECT * FROM resources WHERE id = $1`,
+      [id],
+    );
     return result.rows[0] ?? null;
   },
 
@@ -107,16 +110,27 @@ export const resourceModel = {
        SET title = $2, description = $3, university_id = $4, faculty_id = $5, programme_id = $6, subject_id = $7
        WHERE id = $1
        RETURNING *`,
-      [id, params.title, params.description, params.universityId, params.facultyId, params.programmeId, params.subjectId],
+      [
+        id,
+        params.title,
+        params.description,
+        params.universityId,
+        params.facultyId,
+        params.programmeId,
+        params.subjectId,
+      ],
     );
     return result.rows[0] ?? null;
   },
 
-  async setStatus(id: string, status: ResourceRow['status']): Promise<ResourceRow | null> {
-    const result = await pool.query<ResourceRow>(`UPDATE resources SET status = $2 WHERE id = $1 RETURNING *`, [
-      id,
-      status,
-    ]);
+  async setStatus(
+    id: string,
+    status: ResourceRow["status"],
+  ): Promise<ResourceRow | null> {
+    const result = await pool.query<ResourceRow>(
+      `UPDATE resources SET status = $2 WHERE id = $1 RETURNING *`,
+      [id, status],
+    );
     return result.rows[0] ?? null;
   },
 
@@ -129,17 +143,21 @@ export const resourceModel = {
    * the database.
    */
   async remove(id: string): Promise<boolean> {
-    const result = await pool.query(`DELETE FROM resources WHERE id = $1`, [id]);
+    const result = await pool.query(`DELETE FROM resources WHERE id = $1`, [
+      id,
+    ]);
     return (result.rowCount ?? 0) > 0;
   },
 
-  async list(filters: ListResourcesFilters): Promise<{ rows: ResourceListRow[]; total: number }> {
+  async list(
+    filters: ListResourcesFilters,
+  ): Promise<{ rows: ResourceListRow[]; total: number }> {
     const conditions: string[] = [];
     const values: unknown[] = [];
 
     function addCondition(sql: string, value: unknown) {
       values.push(value);
-      conditions.push(sql.replace('?', `$${values.length}`));
+      conditions.push(sql.replace("?", `$${values.length}`));
     }
 
     if (filters.status) {
@@ -147,29 +165,37 @@ export const resourceModel = {
         values.push(filters.status);
         conditions.push(`status = ANY($${values.length})`);
       } else {
-        addCondition('status = ?', filters.status);
+        addCondition("status = ?", filters.status);
       }
     }
-    if (filters.ownerId) addCondition('owner_id = ?', filters.ownerId);
-    if (filters.universityId) addCondition('university_id = ?', filters.universityId);
-    if (filters.facultyId) addCondition('faculty_id = ?', filters.facultyId);
-    if (filters.programmeId) addCondition('programme_id = ?', filters.programmeId);
-    if (filters.subjectId) addCondition('subject_id = ?', filters.subjectId);
+    if (filters.ownerId) addCondition("owner_id = ?", filters.ownerId);
+    if (filters.universityId)
+      addCondition("university_id = ?", filters.universityId);
+    if (filters.facultyId) addCondition("faculty_id = ?", filters.facultyId);
+    if (filters.programmeId)
+      addCondition("programme_id = ?", filters.programmeId);
+    if (filters.subjectId) addCondition("subject_id = ?", filters.subjectId);
 
     let searchParamIndex: number | null = null;
     if (filters.q) {
-      addCondition("search_vector @@ websearch_to_tsquery('english', ?)", filters.q);
+      addCondition(
+        "search_vector @@ websearch_to_tsquery('english', ?)",
+        filters.q,
+      );
       searchParamIndex = values.length;
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     // Relevance always wins ties, but the caller's explicit sortBy still
     // governs the rest of the order — a title search still resolves rank
     // ties alphabetically, not by recency.
     const orderParts: string[] = [];
     if (searchParamIndex !== null) {
-      orderParts.push(`ts_rank(r.search_vector, websearch_to_tsquery('english', $${searchParamIndex})) DESC`);
+      orderParts.push(
+        `ts_rank(r.search_vector, websearch_to_tsquery('english', $${searchParamIndex})) DESC`,
+      );
     }
     orderParts.push(SORT_BY_SQL[filters.sortBy]);
 
@@ -189,7 +215,7 @@ export const resourceModel = {
          LIMIT 1
        ) rf ON true
        ${whereClause}
-       ORDER BY ${orderParts.join(', ')}
+       ORDER BY ${orderParts.join(", ")}
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       dataValues,
     );
@@ -209,13 +235,22 @@ export const resourceModel = {
         `INSERT INTO resource_files (resource_id, storage_key, original_filename, declared_mime_type, size_bytes)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [params.resourceId, params.storageKey, params.originalFilename, params.declaredMimeType, params.sizeBytes],
+        [
+          params.resourceId,
+          params.storageKey,
+          params.originalFilename,
+          params.declaredMimeType,
+          params.sizeBytes,
+        ],
       );
       return result.rows[0];
     },
 
     async findById(id: string): Promise<ResourceFileRow | null> {
-      const result = await pool.query<ResourceFileRow>(`SELECT * FROM resource_files WHERE id = $1`, [id]);
+      const result = await pool.query<ResourceFileRow>(
+        `SELECT * FROM resource_files WHERE id = $1`,
+        [id],
+      );
       return result.rows[0] ?? null;
     },
 
@@ -227,10 +262,13 @@ export const resourceModel = {
       return result.rows;
     },
 
-    async findByStorageKey(storageKey: string): Promise<ResourceFileRow | null> {
-      const result = await pool.query<ResourceFileRow>(`SELECT * FROM resource_files WHERE storage_key = $1`, [
-        storageKey,
-      ]);
+    async findByStorageKey(
+      storageKey: string,
+    ): Promise<ResourceFileRow | null> {
+      const result = await pool.query<ResourceFileRow>(
+        `SELECT * FROM resource_files WHERE storage_key = $1`,
+        [storageKey],
+      );
       return result.rows[0] ?? null;
     },
 

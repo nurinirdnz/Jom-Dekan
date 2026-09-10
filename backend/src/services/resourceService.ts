@@ -1,5 +1,5 @@
-import { randomUUID, createHash } from 'crypto';
-import { writeFile, readFile, unlink } from 'fs/promises';
+import { randomUUID, createHash } from "crypto";
+import { writeFile, readFile, unlink } from "fs/promises";
 import {
   resourceModel,
   toApiResource,
@@ -7,17 +7,20 @@ import {
   toApiResourceListItem,
   type ResourceRow,
   type ResourceSortBy,
-} from '../models/resourceModel';
-import { auditLogModel } from '../models/auditLogModel';
-import { getStorageAdapter } from '../config/config/storage';
-import { detectFileType, isAllowedMimeType } from '../utils/fileSniffer';
-import { resolveStoragePath, sanitizeFilenameForHeader } from '../utils/storagePaths';
-import { env } from '../config/config/env';
-import { AppError } from '../types/errors';
+} from "../models/resourceModel";
+import { auditLogModel } from "../models/auditLogModel";
+import { getStorageAdapter } from "../config/config/storage";
+import { detectFileType, isAllowedMimeType } from "../utils/fileSniffer";
+import {
+  resolveStoragePath,
+  sanitizeFilenameForHeader,
+} from "../utils/storagePaths";
+import { env } from "../config/config/env";
+import { AppError } from "../types/errors";
 
 interface ActorContext {
   actorUserId: string;
-  actorRole: 'USER' | 'ADMIN';
+  actorRole: "USER" | "ADMIN";
   requestId?: string;
   ipAddress?: string;
 }
@@ -33,17 +36,24 @@ interface ActorContext {
  *   2. Ownership — only reached once visible. Fails -> 403.
  */
 function isVisible(resource: ResourceRow, ctx: ActorContext): boolean {
-  return resource.status === 'READY' || ctx.actorRole === 'ADMIN' || resource.owner_id === ctx.actorUserId;
+  return (
+    resource.status === "READY" ||
+    ctx.actorRole === "ADMIN" ||
+    resource.owner_id === ctx.actorUserId
+  );
 }
 
 function isOwnerOrAdmin(resource: ResourceRow, ctx: ActorContext): boolean {
-  return resource.owner_id === ctx.actorUserId || ctx.actorRole === 'ADMIN';
+  return resource.owner_id === ctx.actorUserId || ctx.actorRole === "ADMIN";
 }
 
-async function getVisibleOrThrow(id: string, ctx: ActorContext): Promise<ResourceRow> {
+async function getVisibleOrThrow(
+  id: string,
+  ctx: ActorContext,
+): Promise<ResourceRow> {
   const resource = await resourceModel.findById(id);
   if (!resource || !isVisible(resource, ctx)) {
-    throw AppError.notFound('Resource not found.');
+    throw AppError.notFound("Resource not found.");
   }
   return resource;
 }
@@ -54,8 +64,8 @@ async function getVisibleOrThrow(id: string, ctx: ActorContext): Promise<Resourc
  * isolated so a real scanner is a one-function swap, not a rewrite of
  * the confirm flow around it.
  */
-async function scanStub(_buffer: Buffer): Promise<'clean' | 'flagged'> {
-  return 'clean';
+async function scanStub(_buffer: Buffer): Promise<"clean" | "flagged"> {
+  return "clean";
 }
 
 export const resourceService = {
@@ -74,7 +84,9 @@ export const resourceService = {
     ctx: ActorContext,
   ) {
     if (!isAllowedMimeType(input.contentType)) {
-      throw AppError.badRequest('Unsupported file type. Allowed: PDF, JPEG, PNG.');
+      throw AppError.badRequest(
+        "Unsupported file type. Allowed: PDF, JPEG, PNG.",
+      );
     }
     if (input.sizeBytes > env.resources.maxFileSizeBytes) {
       throw AppError.badRequest(
@@ -101,12 +113,15 @@ export const resourceService = {
       sizeBytes: input.sizeBytes,
     });
 
-    const { uploadUrl } = await getStorageAdapter().createUploadIntent(storageKey, input.contentType);
+    const { uploadUrl } = await getStorageAdapter().createUploadIntent(
+      storageKey,
+      input.contentType,
+    );
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: 'RESOURCE_CREATED',
-      targetType: 'resource',
+      action: "RESOURCE_CREATED",
+      targetType: "resource",
       targetId: resource.id,
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
@@ -130,22 +145,26 @@ export const resourceService = {
   async receiveUpload(storageKey: string, buffer: Buffer) {
     const detected = detectFileType(buffer);
     if (!detected) {
-      throw AppError.badRequest('The uploaded file does not match any supported file type (PDF, JPEG, PNG).');
+      throw AppError.badRequest(
+        "The uploaded file does not match any supported file type (PDF, JPEG, PNG).",
+      );
     }
 
-    const checksum = createHash('sha256').update(buffer).digest('hex');
+    const checksum = createHash("sha256").update(buffer).digest("hex");
     const file = await resourceModel.files.claimForUpload(storageKey, {
       detectedMimeType: detected,
       checksumSha256: checksum,
     });
     if (!file) {
-      throw AppError.conflict('This upload link has already been used or is no longer valid.');
+      throw AppError.conflict(
+        "This upload link has already been used or is no longer valid.",
+      );
     }
 
     if (file.declared_mime_type !== detected) {
       await resourceModel.files.markFailed(file.id);
       throw AppError.badRequest(
-        'The file content does not match the declared file type. This upload has been rejected.',
+        "The file content does not match the declared file type. This upload has been rejected.",
       );
     }
 
@@ -155,37 +174,43 @@ export const resourceService = {
 
   async confirmUpload(fileId: string, ctx: ActorContext) {
     const file = await resourceModel.files.findById(fileId);
-    if (!file) throw AppError.notFound('File not found.');
+    if (!file) throw AppError.notFound("File not found.");
 
     const resource = await getVisibleOrThrow(file.resource_id, ctx);
     if (!isOwnerOrAdmin(resource, ctx)) throw AppError.forbidden();
 
-    if (file.status !== 'UPLOADED') {
-      throw AppError.conflict('This file has not finished uploading yet.');
+    if (file.status !== "UPLOADED") {
+      throw AppError.conflict("This file has not finished uploading yet.");
     }
 
     const buffer = await readFile(resolveStoragePath(file.storage_key));
     const scanResult = await scanStub(buffer);
 
     const updatedFile =
-      scanResult === 'clean' ? await resourceModel.files.markReady(fileId) : await resourceModel.files.markFailed(fileId);
+      scanResult === "clean"
+        ? await resourceModel.files.markReady(fileId)
+        : await resourceModel.files.markFailed(fileId);
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: 'RESOURCE_FILE_CONFIRMED',
-      targetType: 'resource_file',
+      action: "RESOURCE_FILE_CONFIRMED",
+      targetType: "resource_file",
       targetId: fileId,
       metadata: { scanResult },
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
     });
 
-    const newResourceStatus = scanResult === 'clean' ? 'READY' : 'FAILED';
-    const updatedResource = await resourceModel.setStatus(resource.id, newResourceStatus);
+    const newResourceStatus = scanResult === "clean" ? "READY" : "FAILED";
+    const updatedResource = await resourceModel.setStatus(
+      resource.id,
+      newResourceStatus,
+    );
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: newResourceStatus === 'READY' ? 'RESOURCE_READY' : 'RESOURCE_FAILED',
-      targetType: 'resource',
+      action:
+        newResourceStatus === "READY" ? "RESOURCE_READY" : "RESOURCE_FAILED",
+      targetType: "resource",
       targetId: resource.id,
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
@@ -200,7 +225,10 @@ export const resourceService = {
   async getById(id: string, ctx: ActorContext) {
     const resource = await getVisibleOrThrow(id, ctx);
     const files = await resourceModel.files.findByResourceId(id);
-    return { resource: toApiResource(resource), files: files.map(toApiResourceFile) };
+    return {
+      resource: toApiResource(resource),
+      files: files.map(toApiResourceFile),
+    };
   },
 
   async list(
@@ -221,7 +249,7 @@ export const resourceService = {
     const offset = (filters.page - 1) * filters.pageSize;
 
     const { rows, total } = await resourceModel.list({
-      status: filters.mine ? undefined : 'READY',
+      status: filters.mine ? undefined : "READY",
       ownerId: filters.mine ? ctx.actorUserId : undefined,
       universityId: filters.universityId,
       facultyId: filters.facultyId,
@@ -262,12 +290,12 @@ export const resourceService = {
       programmeId: input.programmeId ?? null,
       subjectId: input.subjectId ?? null,
     });
-    if (!updated) throw AppError.notFound('Resource not found.');
+    if (!updated) throw AppError.notFound("Resource not found.");
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: 'RESOURCE_UPDATED',
-      targetType: 'resource',
+      action: "RESOURCE_UPDATED",
+      targetType: "resource",
       targetId: id,
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
@@ -275,18 +303,22 @@ export const resourceService = {
     return toApiResource(updated);
   },
 
-  async setStatus(id: string, action: 'ARCHIVE' | 'RESTORE', ctx: ActorContext) {
+  async setStatus(
+    id: string,
+    action: "ARCHIVE" | "RESTORE",
+    ctx: ActorContext,
+  ) {
     const resource = await getVisibleOrThrow(id, ctx);
     if (!isOwnerOrAdmin(resource, ctx)) throw AppError.forbidden();
 
-    const nextStatus = action === 'ARCHIVE' ? 'ARCHIVED' : 'READY';
+    const nextStatus = action === "ARCHIVE" ? "ARCHIVED" : "READY";
     const updated = await resourceModel.setStatus(id, nextStatus);
-    if (!updated) throw AppError.notFound('Resource not found.');
+    if (!updated) throw AppError.notFound("Resource not found.");
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: action === 'ARCHIVE' ? 'RESOURCE_ARCHIVED' : 'RESOURCE_RESTORED',
-      targetType: 'resource',
+      action: action === "ARCHIVE" ? "RESOURCE_ARCHIVED" : "RESOURCE_RESTORED",
+      targetType: "resource",
       targetId: id,
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
@@ -309,7 +341,7 @@ export const resourceService = {
 
     const files = await resourceModel.files.findByResourceId(id);
     const removed = await resourceModel.remove(id);
-    if (!removed) throw AppError.notFound('Resource not found.');
+    if (!removed) throw AppError.notFound("Resource not found.");
 
     await Promise.all(
       files.map((file) =>
@@ -321,8 +353,8 @@ export const resourceService = {
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,
-      action: 'RESOURCE_DELETED',
-      targetType: 'resource',
+      action: "RESOURCE_DELETED",
+      targetType: "resource",
       targetId: id,
       requestId: ctx.requestId,
       ipAddress: ctx.ipAddress,
@@ -331,12 +363,12 @@ export const resourceService = {
 
   async getDownloadUrl(fileId: string, ctx: ActorContext) {
     const file = await resourceModel.files.findById(fileId);
-    if (!file) throw AppError.notFound('File not found.');
+    if (!file) throw AppError.notFound("File not found.");
 
     // Same visibility gate as any other resource read — never trust a
     // fileId alone to imply permission.
     await getVisibleOrThrow(file.resource_id, ctx);
-    if (file.status !== 'READY') throw AppError.notFound('File not found.');
+    if (file.status !== "READY") throw AppError.notFound("File not found.");
 
     const url = await getStorageAdapter().createSignedDownloadUrl(
       file.storage_key,
@@ -355,8 +387,8 @@ export const resourceService = {
    */
   async resolveDownload(storageKey: string) {
     const file = await resourceModel.files.findByStorageKey(storageKey);
-    if (!file || file.status !== 'READY') {
-      throw AppError.notFound('File not found.');
+    if (!file || file.status !== "READY") {
+      throw AppError.notFound("File not found.");
     }
     return {
       path: resolveStoragePath(storageKey),

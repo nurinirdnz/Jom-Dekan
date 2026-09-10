@@ -50,14 +50,14 @@ export default function ResourceDetail() {
 
   if (isLoading)
     return (
-      <p className="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500">
+      <p className="mx-auto max-w-3xl px-[18px] py-[22px] text-sm text-slate-500">
         Loading…
       </p>
     );
 
   if (isError || !data)
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
+      <div className="mx-auto max-w-3xl px-[18px] py-[22px]">
         <p className="text-sm text-red-600">
           This resource does not exist, or you don't have access to it.
         </p>
@@ -104,7 +104,7 @@ export default function ResourceDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-3xl px-[18px] py-[22px]">
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -113,7 +113,7 @@ export default function ResourceDetail() {
         ← Back
       </button>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6">
+      <div className="mt-4 rounded-2xl border border-[#ECEBF7] bg-white p-6">
         {isEditing ? (
           <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4">
             <div>

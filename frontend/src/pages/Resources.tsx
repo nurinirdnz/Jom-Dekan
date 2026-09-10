@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FileText, ImageOff } from "lucide-react";
 import { useResources, useImagePreviewUrl } from "../hooks/useResources";
 import { useCurrentUser } from "../hooks/useAuth";
 import { useUniversities, useFaculties, useProgrammes, useSubjects } from "../hooks/useTaxonomy";
+import { ResourcesPageSkeleton } from "../components/common/ResourcesPageSkeleton";
 import type { ResourceListItem } from "../types/resource";
 
 const PAGE_SIZE = 12;
@@ -20,13 +21,19 @@ function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
   // Each card fetches its own short-lived signed URL — the backend
   // re-checks visibility on every request, so there's no shortcut that
   // skips that check just because this is a thumbnail, not a download.
-  const { data: previewUrl, isLoading } = useImagePreviewUrl(isImage ? (resource.readyFileId ?? undefined) : undefined);
+  const { data: previewUrl, isLoading } = useImagePreviewUrl(
+    isImage ? (resource.readyFileId ?? undefined) : undefined,
+  );
 
   return (
     <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100">
       {isImage ? (
         previewUrl ? (
-          <img src={previewUrl} alt={resource.title} className="h-full w-full object-cover" />
+          <img
+            src={previewUrl}
+            alt={resource.title}
+            className="h-full w-full object-cover"
+          />
         ) : isLoading ? (
           <div className="h-full w-full animate-pulse bg-slate-200" />
         ) : (
@@ -41,9 +48,13 @@ function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
 
 export default function Resources() {
   const user = useCurrentUser();
-  const [mine, setMine] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [q, setQ] = useState<string | undefined>(undefined);
+  // Lets the header search bar (?search=) and the "My Uploads" profile
+  // menu item (?mine=true) deep-link here with real state instead of
+  // needing their own pages for the same data.
+  const [searchParams] = useSearchParams();
+  const [mine, setMine] = useState(searchParams.get("mine") === "true");
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
+  const [q, setQ] = useState<string | undefined>(searchParams.get("search") ?? undefined);
   const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [universityId, setUniversityId] = useState<string | undefined>(undefined);
   const [facultyId, setFacultyId] = useState<string | undefined>(undefined);
@@ -104,12 +115,13 @@ export default function Resources() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-[18px] py-[22px]">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Resources</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Academic Resources</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Browse notes, past papers, and other academic resources shared by students.
+            Browse notes, past papers, and other academic resources shared by
+            students.
           </p>
         </div>
         <Link
@@ -129,7 +141,9 @@ export default function Resources() {
               setPage(1);
             }}
             className={`rounded-full px-4 py-1.5 font-medium ${
-              !mine ? "bg-primary-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              !mine
+                ? "bg-primary-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
             All resources
@@ -141,7 +155,9 @@ export default function Resources() {
               setPage(1);
             }}
             className={`rounded-full px-4 py-1.5 font-medium ${
-              mine ? "bg-primary-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              mine
+                ? "bg-primary-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
             My uploads
@@ -226,9 +242,9 @@ export default function Resources() {
 
       <div className="mt-6">
         {isLoading ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading…</p>
+          <ResourcesPageSkeleton count={PAGE_SIZE} />
         ) : isError ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-red-600">
+          <p className="rounded-2xl border border-[#ECEBF7] bg-white p-4 text-sm text-red-600">
             Could not load resources.
           </p>
         ) : resources.length > 0 ? (
@@ -237,24 +253,32 @@ export default function Resources() {
               <Link
                 key={r.id}
                 to={`/resources/${r.id}`}
-                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-primary-200 hover:shadow-md"
+                className="flex flex-col overflow-hidden rounded-2xl border border-[#ECEBF7] bg-white shadow-sm transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
               >
                 <ResourceThumbnail resource={r} />
                 <div className="flex flex-col p-5">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="font-semibold text-slate-800">{r.title}</h2>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}
+                    >
                       {r.status}
                     </span>
                   </div>
-                  {r.description && <p className="mt-2 line-clamp-2 text-sm text-slate-500">{r.description}</p>}
-                  <p className="mt-3 text-xs text-slate-400">Added {new Date(r.createdAt).toLocaleDateString()}</p>
+                  {r.description && (
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                      {r.description}
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs text-slate-400">
+                    Added {new Date(r.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+          <p className="rounded-2xl border border-[#ECEBF7] bg-white p-4 text-sm text-slate-500">
             {q
               ? "No resources match your search."
               : mine

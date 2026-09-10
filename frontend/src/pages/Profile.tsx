@@ -2,20 +2,42 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { FileText, MessageSquare, Newspaper } from 'lucide-react';
 import { updateProfileFormSchema, type UpdateProfileFormValues } from '../schemas/profileSchemas';
 import { useMyProfile, useMyStats, useUpdateProfile } from '../hooks/useProfile';
+import { useForgotPassword } from '../hooks/useAuth';
 import { useUniversities } from '../hooks/useTaxonomy';
 import { FIELDS_OF_STUDY } from '../constants/fieldsOfStudy';
 import { SearchableSelect } from '../components/common/SearchableSelect';
 
 const CURRENT_SEMESTER_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
 
+// Same reasoning as the header/sidebar's disabled menu items elsewhere
+// in this app — these need a real preferences endpoint before a toggle
+// here would mean anything.
+const PREFERENCES = [
+  { label: 'Forum replies', meta: 'Email me when someone answers my thread' },
+  { label: 'Upload verification', meta: 'Notify me when moderation completes' },
+  { label: 'Weekly digest', meta: 'Top resources for my courses each Sunday' },
+  { label: 'Public profile', meta: 'Show my uploads and contributor rating' },
+];
+
+function DisabledToggle() {
+  return (
+    <span
+      title="Coming soon"
+      className="relative inline-flex h-[26px] w-[46px] shrink-0 cursor-not-allowed items-center rounded-full bg-slate-200"
+    >
+      <span className="absolute left-[3px] h-5 w-5 rounded-full bg-white shadow-sm" />
+    </span>
+  );
+}
+
 export default function Profile() {
   const { data: profile, isLoading } = useMyProfile();
   const { data: stats } = useMyStats();
   const updateProfile = useUpdateProfile();
-  const [isEditing, setIsEditing] = useState(false);
+  const forgotPassword = useForgotPassword();
+  const [resetSent, setResetSent] = useState(false);
 
   const {
     register,
@@ -43,18 +65,20 @@ export default function Profile() {
   }, [profile, reset]);
 
   const onSubmit = (values: UpdateProfileFormValues) => {
-    updateProfile.mutate(
-      {
-        displayName: values.displayName,
-        academicRole: values.academicRole,
-        universityId: values.universityId,
-        fieldOfStudy: values.fieldOfStudy,
-        currentYear: values.currentYear,
-        currentSemester: values.currentSemester,
-      },
-      { onSuccess: () => setIsEditing(false) },
-    );
+    updateProfile.mutate({
+      displayName: values.displayName,
+      academicRole: values.academicRole,
+      universityId: values.universityId,
+      fieldOfStudy: values.fieldOfStudy,
+      currentYear: values.currentYear,
+      currentSemester: values.currentSemester,
+    });
   };
+
+  function handleSendResetLink() {
+    if (!profile?.email) return;
+    forgotPassword.mutate({ email: profile.email }, { onSuccess: () => setResetSent(true) });
+  }
 
   const serverError =
     updateProfile.isError && axios.isAxiosError(updateProfile.error)
@@ -64,84 +88,106 @@ export default function Profile() {
         : null;
 
   if (isLoading || !profile) {
-    return <div className="mx-auto max-w-2xl px-4 py-10 text-sm text-slate-500">Loading profile…</div>;
+    return <div className="mx-auto max-w-[1000px] px-[18px] py-[22px] text-sm text-slate-500">Loading profile…</div>;
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Your profile</h1>
+    <div className="mx-auto max-w-[1000px] px-[18px] py-[22px]">
+      <h1 className="text-2xl font-bold text-slate-900">Profile &amp; Settings</h1>
+      <p className="mt-1 text-sm text-slate-500">Your details, contribution record and notification preferences.</p>
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        <StatCard icon={FileText} label="Materials" value={stats?.resourceCount} />
-        <StatCard icon={Newspaper} label="Forum posts" value={stats?.forumPostCount} />
-        <StatCard icon={MessageSquare} label="Comments" value={stats?.forumCommentCount} />
+      {/* Hero — same gradient family as the dashboard's hero card. */}
+      <div
+        className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[22px] p-[22px] text-white"
+        style={{ background: 'radial-gradient(120% 140% at 85% 10%, #4A3FD1 0%, #2E2372 55%, #231C57 100%)' }}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[#F5C21A] text-xl font-extrabold text-[#231C57]">
+            {profile.email[0]?.toUpperCase() ?? '?'}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-xl font-extrabold tracking-tight">{profile.displayName}</p>
+            <p className="truncate text-sm font-medium text-[#C6C2EC]">
+              {profile.role === 'ADMIN' ? 'Administrator' : profile.academicRole === 'TUTOR' ? 'Tutor' : 'Student'}
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="grid flex-1 grid-cols-2 gap-0 overflow-hidden rounded-2xl border border-white/[.16] bg-white/[.09] sm:grid-cols-4"
+          style={{ minWidth: 260 }}
+        >
+          {[
+            { label: 'Uploads', value: stats?.resourceCount ?? '—' },
+            { label: 'Rating', value: '—' },
+            { label: 'Downloads', value: '—' },
+            { label: 'Threads', value: stats?.forumPostCount ?? '—' },
+          ].map(({ label, value }, i) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center gap-1 px-2 py-4 ${i > 0 ? 'border-l border-white/[.12]' : ''}`}
+            >
+              <span className="text-xl font-extrabold leading-none">{value}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#B9B4E4]">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
-        {!isEditing ? (
-          <>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Full name" value={profile.displayName} />
-              <Field label="Email" value={profile.email} />
-              <Field label="Registering as" value={profile.academicRole === 'TUTOR' ? 'Tutor' : 'Student'} />
-              <Field label="University" value={profile.university?.name ?? '—'} />
-              <Field label="Field of study" value={profile.fieldOfStudy ?? '—'} />
-              <Field label="Current year" value={profile.currentYear ? `Year ${profile.currentYear}` : '—'} />
-              <Field label="Current semester" value={profile.currentSemester ? `Semester ${profile.currentSemester}` : '—'} />
-            </dl>
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="mt-6 rounded-full bg-primary-600 px-5 py-2.5 font-medium text-white hover:bg-primary-700"
-            >
-              Edit profile
-            </button>
-          </>
-        ) : (
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-            {serverError && (
-              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {serverError}
-              </div>
-            )}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <div className="mt-6 rounded-[22px] border border-[#ECEBF7] bg-white p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-800">Account details</h2>
 
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-slate-700">
-                Full name
-              </label>
+          {serverError && (
+            <div
+              role="alert"
+              className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {serverError}
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Full name</span>
               <input
-                id="displayName"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                type="text"
+                className="h-11 rounded-xl border border-[#E4E3F2] px-3 text-sm font-medium text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 aria-invalid={Boolean(errors.displayName)}
                 {...register('displayName')}
               />
-              {errors.displayName && <p className="mt-1 text-sm text-red-600">{errors.displayName.message}</p>}
-            </div>
+              {errors.displayName && <span className="text-xs text-red-600">{errors.displayName.message}</span>}
+            </label>
 
-            <fieldset>
-              <legend className="block text-sm font-medium text-slate-700">Registering as</legend>
-              <div className="mt-1 flex gap-4">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="radio" value="STUDENT" {...register('academicRole')} />
-                  Student
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="radio" value="TUTOR" {...register('academicRole')} />
-                  Tutor
-                </label>
-              </div>
-            </fieldset>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Student email</span>
+              <input
+                type="text"
+                value={profile.email}
+                disabled
+                title="Editing isn't available yet"
+                className="h-11 cursor-not-allowed rounded-xl border border-[#E4E3F2] bg-slate-50 px-3 text-sm font-medium text-slate-700"
+              />
+            </label>
 
-            <div>
-              <label htmlFor="universityId" className="block text-sm font-medium text-slate-700">
-                University
-              </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Registering as</span>
+              <select
+                className="h-11 rounded-xl border border-[#E4E3F2] px-3 text-sm font-medium text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                {...register('academicRole')}
+              >
+                <option value="STUDENT">Student</option>
+                <option value="TUTOR">Tutor</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">University</span>
               <Controller
                 control={control}
                 name="universityId"
                 render={({ field }) => (
                   <SearchableSelect
-                    id="universityId"
                     options={universityOptions}
                     value={field.value ?? ''}
                     onChange={field.onChange}
@@ -151,19 +197,16 @@ export default function Profile() {
                   />
                 )}
               />
-              {errors.universityId && <p className="mt-1 text-sm text-red-600">{errors.universityId.message}</p>}
-            </div>
+              {errors.universityId && <span className="text-xs text-red-600">{errors.universityId.message}</span>}
+            </label>
 
-            <div>
-              <label htmlFor="fieldOfStudy" className="block text-sm font-medium text-slate-700">
-                Field of study
-              </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Field of study</span>
               <Controller
                 control={control}
                 name="fieldOfStudy"
                 render={({ field }) => (
                   <SearchableSelect
-                    id="fieldOfStudy"
                     options={fieldOfStudyOptions}
                     value={field.value ?? ''}
                     onChange={field.onChange}
@@ -173,95 +216,98 @@ export default function Profile() {
                   />
                 )}
               />
-              {errors.fieldOfStudy && <p className="mt-1 text-sm text-red-600">{errors.fieldOfStudy.message}</p>}
-            </div>
+              {errors.fieldOfStudy && <span className="text-xs text-red-600">{errors.fieldOfStudy.message}</span>}
+            </label>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="currentYear" className="block text-sm font-medium text-slate-700">
-                  Current year of study
-                </label>
-                <input
-                  id="currentYear"
-                  type="number"
-                  min={1}
-                  max={8}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  aria-invalid={Boolean(errors.currentYear)}
-                  {...register('currentYear')}
-                />
-                {errors.currentYear && <p className="mt-1 text-sm text-red-600">{errors.currentYear.message}</p>}
-              </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Current year</span>
+              <input
+                type="number"
+                min={1}
+                max={8}
+                className="h-11 rounded-xl border border-[#E4E3F2] px-3 text-sm font-medium text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                aria-invalid={Boolean(errors.currentYear)}
+                {...register('currentYear')}
+              />
+              {errors.currentYear && <span className="text-xs text-red-600">{errors.currentYear.message}</span>}
+            </label>
 
-              <div>
-                <label htmlFor="currentSemester" className="block text-sm font-medium text-slate-700">
-                  Current semester
-                </label>
-                <select
-                  id="currentSemester"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  aria-invalid={Boolean(errors.currentSemester)}
-                  {...register('currentSemester')}
-                >
-                  <option value="">Select</option>
-                  {CURRENT_SEMESTER_OPTIONS.map((semester) => (
-                    <option key={semester} value={semester}>
-                      Semester {semester}
-                    </option>
-                  ))}
-                </select>
-                {errors.currentSemester && (
-                  <p className="mt-1 text-sm text-red-600">{errors.currentSemester.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isSubmitting || updateProfile.isPending}
-                className="rounded-full bg-primary-600 px-5 py-2.5 font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Current semester</span>
+              <select
+                className="h-11 rounded-xl border border-[#E4E3F2] px-3 text-sm font-medium text-slate-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                aria-invalid={Boolean(errors.currentSemester)}
+                {...register('currentSemester')}
               >
-                {updateProfile.isPending ? 'Saving…' : 'Save changes'}
-              </button>
+                {CURRENT_SEMESTER_OPTIONS.map((semester) => (
+                  <option key={semester} value={semester}>
+                    Semester {semester}
+                  </option>
+                ))}
+              </select>
+              {errors.currentSemester && (
+                <span className="text-xs text-red-600">{errors.currentSemester.message}</span>
+              )}
+            </label>
+          </div>
+
+          <h2 className="mt-8 font-semibold text-slate-800">Preferences</h2>
+          <p className="mt-0.5 text-sm text-slate-500">These aren&apos;t wired up to a real preferences endpoint yet.</p>
+          <div className="mt-4 flex flex-col gap-2">
+            {PREFERENCES.map(({ label, meta }) => (
+              <div
+                key={label}
+                className="flex items-center justify-between gap-4 rounded-xl border border-[#ECEBF7] p-3.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800">{label}</p>
+                  <p className="text-xs text-slate-500">{meta}</p>
+                </div>
+                <DisabledToggle />
+              </div>
+            ))}
+          </div>
+
+          <h2 className="mt-8 font-semibold text-slate-800">Password &amp; security</h2>
+          <div className="mt-4 rounded-xl border border-[#ECEBF7] p-4">
+            <p className="text-xs font-medium text-slate-400">
+              Direct password changes aren&apos;t available yet — use the email reset link below instead.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
               <button
                 type="button"
-                onClick={() => setIsEditing(false)}
-                className="rounded-full bg-slate-100 px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-200"
+                onClick={handleSendResetLink}
+                disabled={forgotPassword.isPending || resetSent}
+                className="h-11 rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-400"
               >
-                Cancel
+                {resetSent
+                  ? 'Reset link sent — check your email'
+                  : forgotPassword.isPending
+                    ? 'Sending…'
+                    : 'Send me a reset link'}
               </button>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
+          </div>
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-slate-900">{value}</dd>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof FileText;
-  label: string;
-  value: number | undefined;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 text-center">
-      <Icon className="mx-auto h-5 w-5 text-primary-600" aria-hidden="true" />
-      <p className="mt-2 text-xl font-bold text-slate-900">{value ?? '—'}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={isSubmitting || updateProfile.isPending}
+              className="h-11 rounded-xl bg-primary-600 px-5 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {updateProfile.isPending ? 'Saving…' : 'Save changes'}
+            </button>
+            <button
+              type="button"
+              disabled
+              title="Coming soon — no account-deletion endpoint yet"
+              className="h-11 cursor-not-allowed rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-400"
+            >
+              Delete account
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }
