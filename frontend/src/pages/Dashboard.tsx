@@ -88,7 +88,7 @@ export default function Dashboard() {
                 Explore resources
               </Link>
               <Link
-                to="/marketplace"
+                to="/marketplace?type=TUTORING"
                 className="rounded-full border border-white/30 px-4 py-2.5 text-sm font-semibold text-white transition motion-safe:duration-150 hover:-translate-y-0.5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               >
                 Book a tutor

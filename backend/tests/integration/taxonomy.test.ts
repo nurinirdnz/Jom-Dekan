@@ -2,6 +2,7 @@ import request from "supertest";
 import { createApp } from "../../src/app";
 import { pool } from "../../src/config/config/db";
 import { userModel } from "../../src/models/userModel";
+import { seededTaxonomy, baseRegisterPayload } from "../helpers/registerPayload";
 
 const app = createApp();
 
@@ -23,30 +24,28 @@ describe("Taxonomy API", () => {
     skip = !(await dbReachable());
     if (skip) return;
 
+    const taxonomy = await seededTaxonomy();
+    if (!taxonomy) {
+      skip = true;
+      return;
+    }
+
     const email = `taxonomy-user-${Date.now()}@example.com`;
     const userRes = await request(app)
       .post("/api/v1/auth/register")
-      .send({
-        email,
-        password: "correcthorsebattery",
-        displayName: "Regular Student",
-      });
+      .send(baseRegisterPayload(taxonomy, { email, displayName: "Regular Student" }));
     userToken = userRes.body.accessToken;
 
     const adminEmail = `taxonomy-admin-${Date.now()}@example.com`;
     const adminRes = await request(app)
       .post("/api/v1/auth/register")
-      .send({
-        email: adminEmail,
-        password: "correcthorsebattery",
-        displayName: "Admin Student",
-      });
+      .send(baseRegisterPayload(taxonomy, { email: adminEmail, displayName: "Admin Student" }));
     adminToken = adminRes.body.accessToken;
     await userModel.setRole(adminRes.body.user.id, "ADMIN");
     // Re-login so the access token's role claim reflects the promotion.
     const relogin = await request(app)
       .post("/api/v1/auth/login")
-      .send({ email: adminEmail, password: "correcthorsebattery" });
+      .send({ email: adminEmail, password: "Correcthorsebattery1!" });
     adminToken = relogin.body.accessToken;
   });
 
@@ -54,9 +53,18 @@ describe("Taxonomy API", () => {
     await pool.end();
   });
 
-  it("rejects an unauthenticated request", async () => {
+  it("lets an unauthenticated request read the university list (needed by the registration form)", async () => {
     if (skip) return;
     const res = await request(app).get("/api/v1/taxonomy/universities");
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it("still rejects an unauthenticated request to create a university", async () => {
+    if (skip) return;
+    const res = await request(app)
+      .post("/api/v1/taxonomy/universities")
+      .send({ name: "Should Not Be Created" });
     expect(res.status).toBe(401);
   });
 

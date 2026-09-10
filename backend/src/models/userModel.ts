@@ -8,6 +8,7 @@ export interface UserRow {
   status: 'ACTIVE' | 'SUSPENDED' | 'RESTRICTED' | 'DEACTIVATED';
   auth_provider: 'PASSWORD' | 'GOOGLE';
   email_verified_at: Date | null;
+  terms_accepted_at: Date | null;
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -35,23 +36,40 @@ export const userModel = {
     return result.rows[0] ?? null;
   },
 
-  async create(params: { email: string; passwordHash: string; displayName: string }): Promise<UserRow> {
+  async create(params: {
+    email: string;
+    passwordHash: string;
+    displayName: string;
+    academicRole: 'STUDENT' | 'TUTOR';
+    universityId: string;
+    fieldOfStudy: string;
+    currentYear: number;
+    currentSemester: number;
+  }): Promise<UserRow> {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       const userResult = await client.query<UserRow>(
-        `INSERT INTO users (email, password_hash)
-         VALUES ($1, $2)
+        `INSERT INTO users (email, password_hash, terms_accepted_at)
+         VALUES ($1, $2, now())
          RETURNING *`,
         [params.email.trim().toLowerCase(), params.passwordHash],
       );
       const user = userResult.rows[0];
 
       await client.query(
-        `INSERT INTO user_profiles (user_id, display_name)
-         VALUES ($1, $2)`,
-        [user.id, params.displayName],
+        `INSERT INTO user_profiles (user_id, display_name, academic_role, university_id, field_of_study, current_year, current_semester)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          user.id,
+          params.displayName,
+          params.academicRole,
+          params.universityId,
+          params.fieldOfStudy,
+          params.currentYear,
+          params.currentSemester,
+        ],
       );
 
       await client.query('COMMIT');
@@ -62,6 +80,10 @@ export const userModel = {
     } finally {
       client.release();
     }
+  },
+
+  async markEmailVerified(id: string): Promise<void> {
+    await pool.query(`UPDATE users SET email_verified_at = now() WHERE id = $1`, [id]);
   },
 
   async setRole(id: string, role: 'USER' | 'ADMIN'): Promise<UserRow | null> {
@@ -77,6 +99,18 @@ export const userModel = {
   },
 };
 
-export function toSafeUser(row: UserRow): { id: string; email: string; role: string; createdAt: Date } {
-  return { id: row.id, email: row.email, role: row.role, createdAt: row.created_at };
+export function toSafeUser(row: UserRow): {
+  id: string;
+  email: string;
+  role: string;
+  emailVerified: boolean;
+  createdAt: Date;
+} {
+  return {
+    id: row.id,
+    email: row.email,
+    role: row.role,
+    emailVerified: row.email_verified_at !== null,
+    createdAt: row.created_at,
+  };
 }
