@@ -107,6 +107,13 @@ export const taxonomyModel = {
       );
       return result.rows;
     },
+    async findById(id: string): Promise<FacultyRow | null> {
+      const result = await pool.query<FacultyRow>(
+        `SELECT * FROM faculties WHERE id = $1`,
+        [id],
+      );
+      return result.rows[0] ?? null;
+    },
     async create(params: {
       universityId: string;
       name: string;
@@ -151,6 +158,13 @@ export const taxonomyModel = {
         [facultyId],
       );
       return result.rows;
+    },
+    async findById(id: string): Promise<ProgrammeRow | null> {
+      const result = await pool.query<ProgrammeRow>(
+        `SELECT * FROM programmes WHERE id = $1`,
+        [id],
+      );
+      return result.rows[0] ?? null;
     },
     async create(params: {
       facultyId: string;

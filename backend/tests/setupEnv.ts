@@ -14,3 +14,8 @@ process.env.STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local-fs';
 process.env.STORAGE_LOCAL_ROOT = process.env.STORAGE_LOCAL_ROOT || './storage/resources-test';
 process.env.STORAGE_SIGNING_SECRET =
   process.env.STORAGE_SIGNING_SECRET || 'test-storage-signing-secret-that-is-at-least-32-chars';
+// Force-safe regardless of a developer's local .env: tests must never send
+// real email (EMAIL_PROVIDER=smtp there would attempt live SMTP delivery)
+// and must not trip auth rate limiting just from running the suite once.
+process.env.EMAIL_PROVIDER = 'console';
+process.env.RATE_LIMIT_MAX_AUTH = process.env.RATE_LIMIT_MAX_AUTH || '1000';

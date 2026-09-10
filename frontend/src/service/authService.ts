@@ -7,8 +7,23 @@ import type { AuthResponse, User } from '../types/auth';
  * Query.
  */
 export const authService = {
-  register: async (data: { email: string; password: string; displayName: string }): Promise<AuthResponse> => {
+  register: async (data: {
+    email: string;
+    password: string;
+    displayName: string;
+    academicRole: 'STUDENT' | 'TUTOR';
+    universityId: string;
+    fieldOfStudy: string;
+    currentYear: number;
+    currentSemester: number;
+    termsAccepted: true;
+  }): Promise<AuthResponse> => {
     const response = await axiosInstance.post<AuthResponse>('/auth/register', data);
+    return response.data;
+  },
+
+  verifyEmail: async (data: { token: string }): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/verify-email', data);
     return response.data;
   },
 

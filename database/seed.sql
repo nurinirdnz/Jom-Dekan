@@ -15,11 +15,10 @@
 -- (see backend/src/utils/createAdmin.ts and docs/setup.md)
 -- =====================================================================
 
-INSERT INTO universities (name, slug, country) VALUES
-    ('Universiti Teknologi MARA', 'uitm', 'Malaysia'),
-    ('Universiti Malaya', 'um', 'Malaysia'),
-    ('Universiti Kebangsaan Malaysia', 'ukm', 'Malaysia')
-ON CONFLICT (slug) DO NOTHING;
+-- Universities are fully seeded by migration 009 (the real Malaysian
+-- university list) — do not insert them here too. Doing so previously
+-- created duplicate rows (same name, different slug) that the slug
+-- UNIQUE constraint couldn't catch; see migration 011.
 
 INSERT INTO faculties (university_id, name, slug)
 SELECT u.id, f.name, f.slug FROM universities u
@@ -27,7 +26,7 @@ CROSS JOIN LATERAL (VALUES
     ('Faculty of Computer and Mathematical Sciences', 'computer-and-mathematical-sciences'),
     ('Faculty of Law', 'law')
 ) AS f(name, slug)
-WHERE u.slug = 'uitm'
+WHERE u.slug = 'universiti-teknologi-mara'
 ON CONFLICT (university_id, slug) DO NOTHING;
 
 INSERT INTO programmes (faculty_id, name, slug, study_level)

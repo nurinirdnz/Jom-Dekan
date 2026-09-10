@@ -4,6 +4,8 @@ import { userModel, toSafeUser, type UserRow } from '../models/userModel';
 import { sessionModel } from '../models/sessionModel';
 import { auditLogModel } from '../models/auditLogModel';
 import { passwordResetTokenModel } from '../models/passwordResetTokenModel';
+import { emailVerificationTokenModel } from '../models/emailVerificationTokenModel';
+import { taxonomyModel } from '../models/taxonomyModel';
 import { emailService } from './emailService';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../config/config/auth';
 import { env } from '../config/config/env';
@@ -13,6 +15,7 @@ import { parseDurationMs } from '../utils/duration';
 
 const BCRYPT_COST = 12;
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -55,6 +58,11 @@ export const authService = {
     email: string;
     password: string;
     displayName: string;
+    academicRole: 'STUDENT' | 'TUTOR';
+    universityId: string;
+    fieldOfStudy: string;
+    currentYear: number;
+    currentSemester: number;
     requestId?: string;
     ipAddress?: string;
     userAgent?: string;
@@ -67,11 +75,21 @@ export const authService = {
       throw AppError.conflict('An account with this email already exists.');
     }
 
+    const university = await taxonomyModel.universities.findById(params.universityId);
+    if (!university || !university.is_active) {
+      throw AppError.badRequest('Select a valid university.');
+    }
+
     const passwordHash = await bcrypt.hash(params.password, BCRYPT_COST);
     const user = await userModel.create({
       email: params.email,
       passwordHash,
       displayName: params.displayName,
+      academicRole: params.academicRole,
+      universityId: params.universityId,
+      fieldOfStudy: params.fieldOfStudy,
+      currentYear: params.currentYear,
+      currentSemester: params.currentSemester,
     });
 
     const tokens = await issueTokenPair(user, { userAgent: params.userAgent, ipAddress: params.ipAddress });
@@ -85,9 +103,63 @@ export const authService = {
       ipAddress: params.ipAddress,
     });
 
+    try {
+      await authService.sendVerificationEmail(user);
+    } catch (err) {
+      // Email delivery is best-effort — a provider outage must not
+      // prevent account creation. The user can request another link
+      // later (once a resend endpoint exists) or verify never and stay
+      // functionally a USER either way.
+      logger.warn({ userId: user.id, err }, 'Failed to send verification email');
+    }
+
     logger.info({ userId: user.id }, 'User registered');
 
     return { user: toSafeUser(user), ...tokens };
+  },
+
+  async sendVerificationEmail(user: UserRow): Promise<void> {
+    await emailVerificationTokenModel.invalidateAllForUser(user.id);
+
+    const rawToken = generateRawToken();
+    await emailVerificationTokenModel.create({
+      userId: user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS),
+    });
+
+    const verifyUrl = `${env.corsOrigins[0]}/verify-email?token=${rawToken}`;
+    await emailService.sendEmail({
+      to: user.email,
+      subject: 'Verify your JomDekan email',
+      text: `Welcome to JomDekan! Confirm your email address here (expires in 24 hours, single use):\n${verifyUrl}\n\nIf you didn't create this account, you can safely ignore this email.`,
+    });
+  },
+
+  async verifyEmail(params: { token: string; requestId?: string; ipAddress?: string }): Promise<void> {
+    const tokenRow = await emailVerificationTokenModel.findValidByTokenHash(hashToken(params.token));
+    if (!tokenRow) {
+      throw AppError.badRequest('This verification link is invalid or has expired.');
+    }
+
+    const user = await userModel.findById(tokenRow.user_id);
+    if (!user) {
+      throw AppError.badRequest('This verification link is invalid or has expired.');
+    }
+
+    await userModel.markEmailVerified(user.id);
+    await emailVerificationTokenModel.markUsed(tokenRow.id);
+
+    await auditLogModel.record({
+      actorUserId: user.id,
+      action: 'EMAIL_VERIFIED',
+      targetType: 'user',
+      targetId: user.id,
+      requestId: params.requestId,
+      ipAddress: params.ipAddress,
+    });
+
+    logger.info({ userId: user.id }, 'Email verified');
   },
 
   async login(params: { email: string; password: string; requestId?: string; ipAddress?: string; userAgent?: string }) {

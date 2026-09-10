@@ -32,11 +32,28 @@ export function useRegister() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (values: RegisterFormValues) => authService.register(values),
+    mutationFn: (values: RegisterFormValues) =>
+      authService.register({
+        email: values.email,
+        password: values.password,
+        displayName: values.displayName,
+        academicRole: values.academicRole,
+        universityId: values.universityId,
+        fieldOfStudy: values.fieldOfStudy,
+        currentYear: values.currentYear,
+        currentSemester: values.currentSemester,
+        termsAccepted: values.termsAccepted,
+      }),
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
       navigate("/dashboard");
     },
+  });
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: (values: { token: string }) => authService.verifyEmail(values),
   });
 }
 
