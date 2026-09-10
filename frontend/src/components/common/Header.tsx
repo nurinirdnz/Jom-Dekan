@@ -94,9 +94,11 @@ export function Header() {
                   Admin
                 </NavLink>
               )}
-              <NavLink to="/marketplace" className={navLinkClass}>
-                Marketplace
-              </NavLink>
+              {user.role !== "ADMIN" && (
+                <NavLink to="/marketplace" className={navLinkClass}>
+                  Marketplace
+                </NavLink>
+              )}
               <NavLink to="/dashboard" className={navLinkClass}>
                 Dashboard
               </NavLink>
