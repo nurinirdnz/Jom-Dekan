@@ -67,7 +67,7 @@ describe('Auth API', () => {
   function registerPayload(overrides: Record<string, unknown> = {}) {
     return {
       email: testEmail,
-      password: 'correcthorsebattery',
+      password: 'Correcthorsebattery1!',
       displayName: 'Test Student',
       academicRole: 'STUDENT',
       universityId,
@@ -149,7 +149,7 @@ describe('Auth API', () => {
     if (skip) return;
     const loginRes = await request(app).post('/api/v1/auth/login').send({
       email: testEmail,
-      password: 'correcthorsebattery',
+      password: 'Correcthorsebattery1!',
     });
     expect(loginRes.status).toBe(200);
     const accessToken = loginRes.body.accessToken as string;
@@ -181,7 +181,7 @@ describe('Auth API', () => {
       if (skip) return;
       await request(app)
         .post('/api/v1/auth/register')
-        .send(registerPayload({ email: resetTestEmail, password: 'original-password', displayName: 'Reset Test' }));
+        .send(registerPayload({ email: resetTestEmail, password: 'Original-password1!', displayName: 'Reset Test' }));
     });
 
     afterEach(() => {
@@ -206,7 +206,7 @@ describe('Auth API', () => {
       if (skip) return;
       const loginRes = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: resetTestEmail, password: 'original-password' });
+        .send({ email: resetTestEmail, password: 'Original-password1!' });
       expect(loginRes.status).toBe(200);
       const oldSessionCookie = loginRes.headers['set-cookie'];
 
@@ -217,7 +217,7 @@ describe('Auth API', () => {
 
       const resetRes = await request(app)
         .post('/api/v1/auth/reset-password')
-        .send({ token, newPassword: 'brand-new-password' });
+        .send({ token, newPassword: 'Brand-new-password1!' });
       expect(resetRes.status).toBe(200);
 
       // The old session must not survive a password reset.
@@ -227,18 +227,18 @@ describe('Auth API', () => {
       // Old password no longer works; new password does.
       const oldLogin = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: resetTestEmail, password: 'original-password' });
+        .send({ email: resetTestEmail, password: 'Original-password1!' });
       expect(oldLogin.status).toBe(401);
 
       const newLogin = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: resetTestEmail, password: 'brand-new-password' });
+        .send({ email: resetTestEmail, password: 'Brand-new-password1!' });
       expect(newLogin.status).toBe(200);
 
       // The reset token is single-use.
       const reuseRes = await request(app)
         .post('/api/v1/auth/reset-password')
-        .send({ token, newPassword: 'yet-another-password' });
+        .send({ token, newPassword: 'Yet-another-password1!' });
       expect(reuseRes.status).toBe(400);
     });
 
@@ -246,7 +246,7 @@ describe('Auth API', () => {
       if (skip) return;
       const res = await request(app)
         .post('/api/v1/auth/reset-password')
-        .send({ token: 'not-a-real-token', newPassword: 'whatever-password' });
+        .send({ token: 'not-a-real-token', newPassword: 'Whatever-password1!' });
       expect(res.status).toBe(400);
     });
   });

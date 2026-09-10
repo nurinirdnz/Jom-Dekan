@@ -17,6 +17,6 @@ export const updateProfileFormSchema = z.object({
     .number()
     .int('Enter a whole number.')
     .min(1, 'Must be at least 1.')
-    .max(3, 'Must be 3 or less.'),
+    .max(10, 'Must be 10 or less.'),
 });
 export type UpdateProfileFormValues = z.infer<typeof updateProfileFormSchema>;

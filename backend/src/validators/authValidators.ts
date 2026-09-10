@@ -1,6 +1,16 @@
 import { z } from 'zod';
 import { FIELDS_OF_STUDY } from '../constants/fieldsOfStudy';
 
+// Shared strength rule for every place a user sets/resets a password.
+// Kept in one place so registration and password-reset can never drift.
+const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters.')
+  .max(128, 'Password is too long.')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter.')
+  .regex(/[0-9]/, 'Password must contain at least one number.')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character.');
+
 // .strict() rejects unknown fields outright — this is the mass-assignment
 // defense (e.g. a client cannot slip `role: "ADMIN"` into a register call).
 // Note: `academicRole` (STUDENT/TUTOR) is a self-declared profile field,
@@ -9,10 +19,7 @@ import { FIELDS_OF_STUDY } from '../constants/fieldsOfStudy';
 export const registerSchema = z
   .object({
     email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters.')
-      .max(128, 'Password is too long.'),
+    password: passwordSchema,
     displayName: z
       .string()
       .trim()
@@ -57,10 +64,7 @@ export const forgotPasswordSchema = z
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1, 'Reset token is required.'),
-    newPassword: z
-      .string()
-      .min(8, 'Password must be at least 8 characters.')
-      .max(128, 'Password is too long.'),
+    newPassword: passwordSchema,
   })
   .strict();
 

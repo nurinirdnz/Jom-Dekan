@@ -28,7 +28,7 @@ export async function seededTaxonomy(): Promise<SeededTaxonomy | null> {
 
 export function baseRegisterPayload(taxonomy: SeededTaxonomy, overrides: Record<string, unknown> = {}) {
   return {
-    password: 'correcthorsebattery',
+    password: 'Correcthorsebattery1!',
     displayName: 'Test User',
     academicRole: 'STUDENT',
     universityId: taxonomy.universityId,

@@ -81,7 +81,7 @@ describe("Forum API", () => {
     await userModel.setRole(admin.id, "ADMIN");
     const relogin = await request(app)
       .post("/api/v1/auth/login")
-      .send({ email: admin.email, password: "correcthorsebattery" });
+      .send({ email: admin.email, password: "Correcthorsebattery1!" });
     adminToken = relogin.body.accessToken;
   });
 

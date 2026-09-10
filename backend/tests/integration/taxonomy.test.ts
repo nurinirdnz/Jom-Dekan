@@ -45,7 +45,7 @@ describe("Taxonomy API", () => {
     // Re-login so the access token's role claim reflects the promotion.
     const relogin = await request(app)
       .post("/api/v1/auth/login")
-      .send({ email: adminEmail, password: "correcthorsebattery" });
+      .send({ email: adminEmail, password: "Correcthorsebattery1!" });
     adminToken = relogin.body.accessToken;
   });
 

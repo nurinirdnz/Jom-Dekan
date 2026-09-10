@@ -89,7 +89,7 @@ export default function Register() {
             {...register('password')}
           />
           {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
-          <p className="mt-1 text-xs text-slate-400">At least 8 characters.</p>
+          <p className="mt-1 text-xs text-slate-400">At least 8 characters, with 1 uppercase letter, 1 number, and 1 special character.</p>
         </div>
 
         <fieldset>

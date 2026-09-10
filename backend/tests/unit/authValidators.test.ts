@@ -2,7 +2,7 @@ import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema 
 
 const validRegisterPayload = {
   email: 'Student@Example.com',
-  password: 'correcthorse',
+  password: 'Correcthorse1!',
   displayName: 'Aisyah',
   academicRole: 'STUDENT' as const,
   universityId: '11111111-1111-1111-1111-111111111111',
@@ -23,6 +23,21 @@ describe('registerSchema', () => {
 
   it('rejects a short password', () => {
     const result = registerSchema.safeParse({ ...validRegisterPayload, password: 'short' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a password missing an uppercase letter', () => {
+    const result = registerSchema.safeParse({ ...validRegisterPayload, password: 'correcthorse1!' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a password missing a number', () => {
+    const result = registerSchema.safeParse({ ...validRegisterPayload, password: 'Correcthorse!' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a password missing a special character', () => {
+    const result = registerSchema.safeParse({ ...validRegisterPayload, password: 'Correcthorse1' });
     expect(result.success).toBe(false);
   });
 
@@ -91,17 +106,32 @@ describe('forgotPasswordSchema', () => {
 
 describe('resetPasswordSchema', () => {
   it('accepts a valid token and password', () => {
-    const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'correcthorse' });
+    const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'Correcthorse1!' });
     expect(result.success).toBe(true);
   });
 
   it('rejects an empty token', () => {
-    const result = resetPasswordSchema.safeParse({ token: '', newPassword: 'correcthorse' });
+    const result = resetPasswordSchema.safeParse({ token: '', newPassword: 'Correcthorse1!' });
     expect(result.success).toBe(false);
   });
 
   it('rejects a short new password', () => {
     const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'short' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a new password missing an uppercase letter', () => {
+    const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'correcthorse1!' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a new password missing a number', () => {
+    const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'Correcthorse!' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a new password missing a special character', () => {
+    const result = resetPasswordSchema.safeParse({ token: 'abc123', newPassword: 'Correcthorse1' });
     expect(result.success).toBe(false);
   });
 });
