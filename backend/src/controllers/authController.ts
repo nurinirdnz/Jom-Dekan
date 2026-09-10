@@ -7,16 +7,27 @@ import { AppError } from '../types/errors';
 export const authController = {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, displayName } = req.body as {
-        email: string;
-        password: string;
-        displayName: string;
-      };
+      const { email, password, displayName, academicRole, universityId, fieldOfStudy, currentYear, currentSemester } =
+        req.body as {
+          email: string;
+          password: string;
+          displayName: string;
+          academicRole: 'STUDENT' | 'TUTOR';
+          universityId: string;
+          fieldOfStudy: string;
+          currentYear: number;
+          currentSemester: number;
+        };
 
       const { user, accessToken, refreshToken } = await authService.register({
         email,
         password,
         displayName,
+        academicRole,
+        universityId,
+        fieldOfStudy,
+        currentYear,
+        currentSemester,
         requestId: req.requestId,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
@@ -108,6 +119,16 @@ export const authController = {
       const { token, newPassword } = req.body as { token: string; newPassword: string };
       await authService.resetPassword({ token, newPassword, requestId: req.requestId, ipAddress: req.ip });
       res.status(200).json({ message: 'Password reset successfully. Please log in with your new password.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token } = req.body as { token: string };
+      await authService.verifyEmail({ token, requestId: req.requestId, ipAddress: req.ip });
+      res.status(200).json({ message: 'Email verified successfully.' });
     } catch (err) {
       next(err);
     }

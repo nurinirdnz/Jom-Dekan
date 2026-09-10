@@ -5,10 +5,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { uploadResourceFormSchema, type UploadResourceFormValues } from "../schemas/resourceSchemas";
 import { useUploadResource } from "../hooks/useResources";
+import { useMyProfile } from "../hooks/useProfile";
 
 export default function UploadResource() {
   const navigate = useNavigate();
   const uploadResource = useUploadResource();
+  const { data: profile } = useMyProfile();
   const [progress, setProgress] = useState(0);
 
   const {
@@ -47,6 +49,21 @@ export default function UploadResource() {
         PDF, JPEG, or PNG only, up to 20MB. Every file is checked by its actual content before it's accepted — not
         just its name or extension.
       </p>
+
+      {profile && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p className="font-medium text-slate-800">Uploading as</p>
+          <p className="mt-0.5">
+            {profile.displayName}
+            {profile.university?.name && <> · {profile.university.name}</>}
+            {profile.fieldOfStudy && <> · {profile.fieldOfStudy}</>}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Your name and institution are attached to every resource you upload and stay visible to other users. Only
+            upload material you have the right to share.
+          </p>
+        </div>
+      )}
 
       <form
         className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6"

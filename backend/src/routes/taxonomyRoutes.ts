@@ -21,17 +21,17 @@ import {
 const router = Router();
 
 // Every write route below requires authenticate + authorize('ADMIN').
-// Read routes require authenticate (any logged-in role) — this app has
-// no anonymous/public browsing yet, so there is no reason to expose
-// taxonomy data to unauthenticated requests.
+// Most read routes require authenticate (any logged-in role) — this app
+// has no anonymous/public browsing yet. Universities are the one
+// exception: the registration form needs the list before the visitor has
+// an account, so listing universities is intentionally public.
 
 /**
  * @openapi
  * /taxonomy/universities:
  *   get:
  *     tags: [Taxonomy]
- *     summary: List universities
- *     security: [{ bearerAuth: [] }]
+ *     summary: List universities (public — needed by the registration form, before login)
  *     responses:
  *       200: { description: List of universities }
  *   post:
@@ -42,7 +42,7 @@ const router = Router();
  *       201: { description: Created }
  *       403: { description: Not an admin }
  */
-router.get("/universities", authenticate, taxonomyController.listUniversities);
+router.get("/universities", taxonomyController.listUniversities);
 router.post(
   "/universities",
   authenticate,

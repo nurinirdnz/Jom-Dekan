@@ -1,6 +1,7 @@
 import { Router } from "express";
 import healthRoutes from "./healthRoutes";
 import authRoutes from "./authRoutes";
+import userRoutes from "./userRoutes";
 import taxonomyRoutes from "./taxonomyRoutes";
 import resourceRoutes from "./resourceRoutes";
 import favoriteRoutes from "./favoriteRoutes";
@@ -15,6 +16,7 @@ const router = Router();
 
 router.use(healthRoutes);
 router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
 router.use("/taxonomy", taxonomyRoutes);
 router.use("/resources", resourceRoutes);
 router.use("/favorites", favoriteRoutes);

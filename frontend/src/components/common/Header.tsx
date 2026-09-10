@@ -41,6 +41,12 @@ export function Header() {
               >
                 Dashboard
               </Link>
+              <Link
+                to="/profile"
+                className="text-slate-700 hover:text-primary-700"
+              >
+                Profile
+              </Link>
               <NotificationsPopover />
               <button
                 type="button"

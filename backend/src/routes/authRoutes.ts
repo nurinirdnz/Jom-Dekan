@@ -3,7 +3,13 @@ import { authController } from '../controllers/authController';
 import { validate } from '../config/middleware/validateMiddleware';
 import { authenticate } from '../config/middleware/authMiddleware';
 import { authRateLimiter } from '../config/middleware/rateLimitMiddleware';
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../validators/authValidators';
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from '../validators/authValidators';
 
 const router = Router();
 
@@ -140,6 +146,32 @@ router.post(
   authRateLimiter,
   validate({ body: resetPasswordSchema }),
   authController.resetPassword,
+);
+
+/**
+ * @openapi
+ * /auth/verify-email:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Confirm an email address using the token sent at registration
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token: { type: string }
+ *     responses:
+ *       200: { description: Email verified successfully }
+ *       400: { description: Verification token is invalid, expired, or already used }
+ */
+router.post(
+  '/verify-email',
+  authRateLimiter,
+  validate({ body: verifyEmailSchema }),
+  authController.verifyEmail,
 );
 
 export default router;

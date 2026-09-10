@@ -2,6 +2,7 @@ import request from "supertest";
 import { createApp } from "../../src/app";
 import { pool } from "../../src/config/config/db";
 import { userModel } from "../../src/models/userModel";
+import { seededTaxonomy, baseRegisterPayload } from "../helpers/registerPayload";
 
 const app = createApp();
 
@@ -15,10 +16,17 @@ async function dbReachable(): Promise<boolean> {
 }
 
 async function registerUser(label: string) {
+  const taxonomy = await seededTaxonomy();
+  if (!taxonomy) {
+    throw new Error("Run `npm run seed` against the test database before running this suite.");
+  }
   const email = `forum-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
   const res = await request(app)
     .post("/api/v1/auth/register")
-    .send({ email, password: "correcthorsebattery", displayName: label });
+    .send(baseRegisterPayload(taxonomy, { email, displayName: label }));
+  if (!res.body.accessToken) {
+    throw new Error(`registerUser("${label}") failed: ${JSON.stringify(res.body)}`);
+  }
   return {
     email,
     token: res.body.accessToken as string,

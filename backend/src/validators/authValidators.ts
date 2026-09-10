@@ -1,7 +1,11 @@
 import { z } from 'zod';
+import { FIELDS_OF_STUDY } from '../constants/fieldsOfStudy';
 
 // .strict() rejects unknown fields outright — this is the mass-assignment
 // defense (e.g. a client cannot slip `role: "ADMIN"` into a register call).
+// Note: `academicRole` (STUDENT/TUTOR) is a self-declared profile field,
+// unrelated to the system `role` (USER/ADMIN) — that one stays
+// deliberately unreachable from this schema.
 export const registerSchema = z
   .object({
     email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
@@ -14,6 +18,26 @@ export const registerSchema = z
       .trim()
       .min(2, 'Display name must be at least 2 characters.')
       .max(120, 'Display name is too long.'),
+    academicRole: z.enum(['STUDENT', 'TUTOR'], {
+      errorMap: () => ({ message: 'Select whether you are registering as a Student or a Tutor.' }),
+    }),
+    universityId: z.string().uuid('Select a university.'),
+    fieldOfStudy: z.enum(FIELDS_OF_STUDY, {
+      errorMap: () => ({ message: 'Select your field of study.' }),
+    }),
+    currentYear: z.coerce
+      .number()
+      .int('Current year must be a whole number.')
+      .min(1, 'Current year must be at least 1.')
+      .max(8, 'Current year must be 8 or less.'),
+    currentSemester: z.coerce
+      .number()
+      .int('Current semester must be a whole number.')
+      .min(1, 'Current semester must be at least 1.')
+      .max(10, 'Current semester must be 10 or less.'),
+    termsAccepted: z.literal(true, {
+      errorMap: () => ({ message: 'You must accept the Terms & Conditions to register.' }),
+    }),
   })
   .strict();
 
@@ -40,7 +64,14 @@ export const resetPasswordSchema = z
   })
   .strict();
 
+export const verifyEmailSchema = z
+  .object({
+    token: z.string().min(1, 'Verification token is required.'),
+  })
+  .strict();
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
