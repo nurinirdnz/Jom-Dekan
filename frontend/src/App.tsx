@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
@@ -19,17 +19,10 @@ import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 
 import { ErrorBoundary } from "./errors/ErrorBoundary";
-import AdminUniversities from "./pages/admin/AdminUniversities";
-import AdminFaculties from "./pages/admin/AdminFaculties";
-import AdminProgrammes from "./pages/admin/AdminProgrammes";
-import AdminSubjects from "./pages/admin/AdminSubjects";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 import Marketplace from "./pages/Marketplace";
-import AdminModerationQueue from "./pages/admin/AdminModerationQueue";
-import AdminOpportunities from "./pages/admin/AdminOpportunities";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminUserDetail from "./pages/admin/AdminUserDetail";
+import AdminPanel from "./pages/admin/AdminPanel";
 
 function App() {
   useSessionBootstrap();
@@ -155,12 +148,28 @@ function App() {
         />
 
         <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <DashboardLayout>
+                <AdminPanel />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <ProtectedRoute requireAdmin>
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/universities"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminUniversities />
-              </MainLayout>
+              <Navigate to="/admin?section=universities" replace />
             </ProtectedRoute>
           }
         />
@@ -168,9 +177,7 @@ function App() {
           path="/admin/faculties"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminFaculties />
-              </MainLayout>
+              <Navigate to="/admin?section=faculties" replace />
             </ProtectedRoute>
           }
         />
@@ -178,9 +185,7 @@ function App() {
           path="/admin/programmes"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminProgrammes />
-              </MainLayout>
+              <Navigate to="/admin?section=programmes" replace />
             </ProtectedRoute>
           }
         />
@@ -188,9 +193,7 @@ function App() {
           path="/admin/subjects"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminSubjects />
-              </MainLayout>
+              <Navigate to="/admin?section=subjects" replace />
             </ProtectedRoute>
           }
         />
@@ -229,9 +232,7 @@ function App() {
           path="/admin/moderation"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminModerationQueue />
-              </MainLayout>
+              <Navigate to="/dashboard?section=moderation" replace />
             </ProtectedRoute>
           }
         />
@@ -239,9 +240,7 @@ function App() {
           path="/admin/opportunities"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminOpportunities />
-              </MainLayout>
+              <Navigate to="/dashboard?section=opportunities" replace />
             </ProtectedRoute>
           }
         />
@@ -249,9 +248,7 @@ function App() {
           path="/admin/users"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminUsers />
-              </MainLayout>
+              <Navigate to="/dashboard?section=users" replace />
             </ProtectedRoute>
           }
         />
@@ -259,9 +256,7 @@ function App() {
           path="/admin/users/:id"
           element={
             <ProtectedRoute requireAdmin>
-              <MainLayout>
-                <AdminUserDetail />
-              </MainLayout>
+              <Navigate to="/dashboard?section=users" replace />
             </ProtectedRoute>
           }
         />

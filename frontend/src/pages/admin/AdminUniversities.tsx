@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import {
   universityFormSchema,
   type UniversityFormValues,
@@ -12,7 +12,11 @@ import {
   useSetUniversityStatus,
 } from "../../hooks/useTaxonomy";
 
-export default function AdminUniversities() {
+export default function AdminUniversities({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { data: universities, isLoading, isError } = useUniversities();
   const createUniversity = useCreateUniversity();
   const setStatus = useSetUniversityStatus();
@@ -39,7 +43,7 @@ export default function AdminUniversities() {
       : null;
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <h1 className="text-2xl font-bold text-slate-900">Universities</h1>
       <p className="mt-1 text-sm text-slate-500">
         Only admins can create, edit, or archive universities here. "Archive"
@@ -157,6 +161,6 @@ export default function AdminUniversities() {
           </p>
         )}
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }

@@ -36,6 +36,7 @@ export interface ResourceListRow extends ResourceRow {
 export type ResourceSortBy = "newest" | "oldest" | "title";
 
 export interface ListResourcesFilters {
+  search?: string;
   status?: ResourceRow["status"] | ResourceRow["status"][];
   ownerId?: string;
   universityId?: string;
@@ -175,11 +176,13 @@ export const resourceModel = {
     if (filters.programmeId)
       addCondition("programme_id = ?", filters.programmeId);
     if (filters.subjectId) addCondition("subject_id = ?", filters.subjectId);
-    if (filters.ownerId) addCondition('owner_id = ?', filters.ownerId);
-    if (filters.universityId) addCondition('university_id = ?', filters.universityId);
-    if (filters.facultyId) addCondition('faculty_id = ?', filters.facultyId);
-    if (filters.programmeId) addCondition('programme_id = ?', filters.programmeId);
-    if (filters.subjectId) addCondition('subject_id = ?', filters.subjectId);
+    if (filters.ownerId) addCondition("owner_id = ?", filters.ownerId);
+    if (filters.universityId)
+      addCondition("university_id = ?", filters.universityId);
+    if (filters.facultyId) addCondition("faculty_id = ?", filters.facultyId);
+    if (filters.programmeId)
+      addCondition("programme_id = ?", filters.programmeId);
+    if (filters.subjectId) addCondition("subject_id = ?", filters.subjectId);
 
     let searchParamIndex: number | null = null;
     if (filters.q) {

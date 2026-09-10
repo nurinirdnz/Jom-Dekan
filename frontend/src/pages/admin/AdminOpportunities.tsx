@@ -1,9 +1,13 @@
 import axios from "axios";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import { useAdminOpportunities } from "../../hooks/useAdminOpportunities";
 import type { Opportunity, OpportunityStatus } from "../../types/opportunity";
 
-export function AdminOpportunities() {
+export function AdminOpportunities({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { opportunities, isLoading, updateStatus } = useAdminOpportunities();
 
   const handleToggleStatus = async (opp: Opportunity) => {
@@ -13,7 +17,8 @@ export function AdminOpportunities() {
       await updateStatus({ id: opp.id, status: nextStatus });
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: { message?: string } })?.error?.message
+        ? (err.response?.data as { error?: { message?: string } })?.error
+            ?.message
         : undefined;
       alert(message || "Failed to update listing");
     }
@@ -21,16 +26,16 @@ export function AdminOpportunities() {
 
   if (isLoading) {
     return (
-      <AdminLayout>
+      <AdminPageShell embedded={embedded}>
         <div className="p-8 text-center text-stone-500">
           Loading listings...
         </div>
-      </AdminLayout>
+      </AdminPageShell>
     );
   }
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-stone-800 mb-6">
           Marketplace Listings
@@ -53,7 +58,10 @@ export function AdminOpportunities() {
               </thead>
               <tbody>
                 {opportunities.map((opp: Opportunity) => (
-                  <tr key={opp.id} className="border-b hover:bg-stone-50 text-sm">
+                  <tr
+                    key={opp.id}
+                    className="border-b hover:bg-stone-50 text-sm"
+                  >
                     <td className="p-4 font-medium text-stone-800">
                       {opp.title}
                     </td>
@@ -93,7 +101,7 @@ export function AdminOpportunities() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }
 

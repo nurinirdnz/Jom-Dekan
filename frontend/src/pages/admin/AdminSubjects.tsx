@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import {
   subjectFormSchema,
   type SubjectFormValues,
@@ -12,7 +12,11 @@ import {
   useSetSubjectStatus,
 } from "../../hooks/useTaxonomy";
 
-export default function AdminSubjects() {
+export default function AdminSubjects({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { data: subjects, isLoading, isError } = useSubjects();
   const createSubject = useCreateSubject();
   const setStatus = useSetSubjectStatus();
@@ -34,7 +38,7 @@ export default function AdminSubjects() {
       : null;
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <h1 className="text-2xl font-bold text-slate-900">Subjects</h1>
       <p className="mt-1 text-sm text-slate-500">
         Subjects are standalone (e.g. CSC510) and get linked to programmes
@@ -153,6 +157,6 @@ export default function AdminSubjects() {
           </p>
         )}
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }

@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import { useAdminUsersList } from "../../hooks/useAdminUsers";
 import { useDebounce } from "../../hooks/useDebounce";
 
 const PAGE_SIZE = 20;
 
-export function AdminUsers() {
-  const navigate = useNavigate();
+export function AdminUsers({
+  embedded = false,
+  onSelectUser,
+}: {
+  embedded?: boolean;
+  onSelectUser?: (userId: string) => void;
+}) {
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const search = useDebounce(searchInput, 300);
@@ -23,7 +27,7 @@ export function AdminUsers() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-stone-800 mb-6">Users</h1>
 
@@ -63,7 +67,18 @@ export function AdminUsers() {
                 {users.map((u) => (
                   <tr
                     key={u.id}
-                    onClick={() => navigate(`/admin/users/${u.id}`)}
+                    onClick={() => onSelectUser?.(u.id)}
+                    role={onSelectUser ? "button" : undefined}
+                    tabIndex={onSelectUser ? 0 : undefined}
+                    onKeyDown={(event) => {
+                      if (
+                        onSelectUser &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
+                        event.preventDefault();
+                        onSelectUser(u.id);
+                      }
+                    }}
                     className="border-b hover:bg-stone-50 text-sm cursor-pointer"
                   >
                     <td className="p-4 font-medium text-stone-800">
@@ -107,7 +122,7 @@ export function AdminUsers() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }
 

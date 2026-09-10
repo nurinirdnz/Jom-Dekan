@@ -20,6 +20,7 @@ import healthRoutes from "./routes/healthRoutes";
 import opportunityRoutes from "./routes/opportunityRoutes";
 import moderationRoutes from "./routes/moderationRoutes";
 import adminUserRoutes from "./routes/adminUserRoutes";
+import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes";
 
 export function createApp(): Express {
   const app = express();
@@ -106,6 +107,7 @@ export function createApp(): Express {
   app.use("/api/v1/opportunities", opportunityRoutes);
   app.use("/api/v1", moderationRoutes);
   app.use("/api/v1/admin/users", adminUserRoutes);
+  app.use("/api/v1/admin", adminAnalyticsRoutes);
   // Also expose /health and /version unversioned for simple infra probes.
   app.use(healthRoutes);
 

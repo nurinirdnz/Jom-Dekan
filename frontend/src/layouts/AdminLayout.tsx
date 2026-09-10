@@ -2,10 +2,6 @@ import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
 const links = [
-  { to: "/admin/universities", label: "Universities" },
-  { to: "/admin/faculties", label: "Faculties" },
-  { to: "/admin/programmes", label: "Programmes" },
-  { to: "/admin/subjects", label: "Subjects" },
   { to: "/admin/moderation", label: "Moderation" },
   { to: "/admin/opportunities", label: "Marketplace Listings" },
   { to: "/admin/users", label: "Users" },

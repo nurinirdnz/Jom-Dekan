@@ -1,5 +1,4 @@
 import { randomUUID, createHash } from "crypto";
-import { writeFile, readFile, unlink } from "fs/promises";
 import {
   resourceModel,
   toApiResource,
@@ -17,6 +16,7 @@ import {
 } from "../utils/storagePaths";
 import { env } from "../config/config/env";
 import { AppError } from "../types/errors";
+import { taxonomyModel } from "../models/taxonomyModel";
 
 interface ActorContext {
   actorUserId: string;
@@ -58,6 +58,53 @@ async function getVisibleOrThrow(
   return resource;
 }
 
+async function validateTaxonomy(input: {
+  universityId?: string;
+  facultyId?: string;
+  programmeId?: string;
+  subjectId?: string;
+}) {
+  const university = input.universityId
+    ? await taxonomyModel.universities.findById(input.universityId)
+    : null;
+  const faculty = input.facultyId
+    ? await taxonomyModel.faculties.findById(input.facultyId)
+    : null;
+  const programme = input.programmeId
+    ? await taxonomyModel.programmes.findById(input.programmeId)
+    : null;
+  const subject = input.subjectId
+    ? await taxonomyModel.subjects.findById(input.subjectId)
+    : null;
+
+  if (input.universityId && (!university || !university.is_active)) {
+    throw AppError.badRequest("The selected university is not available.");
+  }
+  if (input.facultyId && (!faculty || !faculty.is_active)) {
+    throw AppError.badRequest("The selected faculty is not available.");
+  }
+  if (input.programmeId && (!programme || !programme.is_active)) {
+    throw AppError.badRequest("The selected programme is not available.");
+  }
+  if (input.subjectId && (!subject || !subject.is_active)) {
+    throw AppError.badRequest("The selected subject is not available.");
+  }
+  if (
+    faculty &&
+    input.universityId &&
+    faculty.university_id !== input.universityId
+  ) {
+    throw AppError.badRequest(
+      "The faculty does not belong to the selected university.",
+    );
+  }
+  if (programme && faculty && programme.faculty_id !== faculty.id) {
+    throw AppError.badRequest(
+      "The programme does not belong to the selected faculty.",
+    );
+  }
+}
+
 /**
  * Stub seam for a future real antivirus/content-scan integration.
  * Always resolves 'clean' today — this is deliberately named and
@@ -93,6 +140,8 @@ export const resourceService = {
         `File is too large. Maximum size is ${Math.floor(env.resources.maxFileSizeBytes / (1024 * 1024))}MB.`,
       );
     }
+
+    await validateTaxonomy(input);
 
     const resource = await resourceModel.create({
       ownerId: ctx.actorUserId,
@@ -168,7 +217,11 @@ export const resourceService = {
       );
     }
 
-    await writeFile(resolveStoragePath(storageKey), buffer);
+    await getStorageAdapter().putObject(
+      storageKey,
+      buffer,
+      file.detected_mime_type ?? file.declared_mime_type,
+    );
     return toApiResourceFile(file);
   },
 
@@ -183,7 +236,7 @@ export const resourceService = {
       throw AppError.conflict("This file has not finished uploading yet.");
     }
 
-    const buffer = await readFile(resolveStoragePath(file.storage_key));
+    const buffer = await getStorageAdapter().getObject(file.storage_key);
     const scanResult = await scanStub(buffer);
 
     const updatedFile =
@@ -282,6 +335,8 @@ export const resourceService = {
     const resource = await getVisibleOrThrow(id, ctx);
     if (!isOwnerOrAdmin(resource, ctx)) throw AppError.forbidden();
 
+    await validateTaxonomy(input);
+
     const updated = await resourceModel.update(id, {
       title: input.title,
       description: input.description ?? null,
@@ -344,11 +399,7 @@ export const resourceService = {
     if (!removed) throw AppError.notFound("Resource not found.");
 
     await Promise.all(
-      files.map((file) =>
-        unlink(resolveStoragePath(file.storage_key)).catch(() => {
-          // Already gone, or never finished uploading — fine either way.
-        }),
-      ),
+      files.map((file) => getStorageAdapter().deleteObject(file.storage_key)),
     );
 
     await auditLogModel.record({

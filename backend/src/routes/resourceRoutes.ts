@@ -1,18 +1,24 @@
-import { Router } from 'express';
-import multer from 'multer';
-import { resourceController } from '../controllers/resourceController';
-import { validate } from '../config/middleware/validateMiddleware';
-import { authenticate } from '../config/middleware/authMiddleware';
-import { verifyStorageTokenMiddleware } from '../config/middleware/storageTokenMiddleware';
-import { idParamSchema } from '../validators/taxonomyValidators';
-import { env } from '../config/config/env';
+import { Router } from "express";
+import multer from "multer";
+import { resourceController } from "../controllers/resourceController";
+import { resourceCommentController } from "../controllers/resourceCommentController";
+import { validate } from "../config/middleware/validateMiddleware";
+import { authenticate } from "../config/middleware/authMiddleware";
+import { verifyStorageTokenMiddleware } from "../config/middleware/storageTokenMiddleware";
+import { idParamSchema } from "../validators/taxonomyValidators";
+import { env } from "../config/config/env";
 import {
   createUploadIntentSchema,
   updateResourceSchema,
   resourceStatusActionSchema,
   listResourcesQuerySchema,
   fileIdParamSchema,
-} from '../validators/resourceValidators';
+} from "../validators/resourceValidators";
+import {
+  resourceIdParamSchema,
+  commentIdParamSchema,
+  resourceCommentBodySchema,
+} from "../validators/resourceCommentValidators";
 
 const router = Router();
 
@@ -20,6 +26,31 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: env.resources.maxFileSizeBytes },
 });
+
+router.get(
+  "/:resourceId/comments",
+  authenticate,
+  validate({ params: resourceIdParamSchema }),
+  resourceCommentController.list,
+);
+router.post(
+  "/:resourceId/comments",
+  authenticate,
+  validate({ params: resourceIdParamSchema, body: resourceCommentBodySchema }),
+  resourceCommentController.create,
+);
+router.put(
+  "/comments/:commentId",
+  authenticate,
+  validate({ params: commentIdParamSchema, body: resourceCommentBodySchema }),
+  resourceCommentController.update,
+);
+router.delete(
+  "/comments/:commentId",
+  authenticate,
+  validate({ params: commentIdParamSchema }),
+  resourceCommentController.remove,
+);
 
 /**
  * The two /files/upload and /files/download routes are deliberately
@@ -41,7 +72,7 @@ const upload = multer({
  *       201: { description: Upload intent created }
  */
 router.post(
-  '/upload-intent',
+  "/upload-intent",
   authenticate,
   validate({ body: createUploadIntentSchema }),
   resourceController.createUploadIntent,
@@ -58,14 +89,14 @@ router.post(
  *       401: { description: Invalid or expired link }
  */
 router.put(
-  '/files/upload',
-  verifyStorageTokenMiddleware('upload'),
+  "/files/upload",
+  verifyStorageTokenMiddleware("upload"),
   // Also require a normal session, not just the token: unlike a real S3
   // presigned PUT (issued to a client with no app session), our SPA
   // already holds a bearer token at upload time — this closes the
   // window where a leaked/logged upload URL alone would be sufficient.
   authenticate,
-  upload.single('file'),
+  upload.single("file"),
   resourceController.receiveUpload,
 );
 
@@ -80,7 +111,7 @@ router.put(
  *       200: { description: Upload confirmed }
  */
 router.post(
-  '/files/:fileId/confirm',
+  "/files/:fileId/confirm",
   authenticate,
   validate({ params: fileIdParamSchema }),
   resourceController.confirmUpload,
@@ -96,7 +127,12 @@ router.post(
  *     responses:
  *       200: { description: List of resources }
  */
-router.get('/', authenticate, validate({ query: listResourcesQuerySchema }), resourceController.list);
+router.get(
+  "/",
+  authenticate,
+  validate({ query: listResourcesQuerySchema }),
+  resourceController.list,
+);
 
 /**
  * @openapi
@@ -116,9 +152,14 @@ router.get('/', authenticate, validate({ query: listResourcesQuerySchema }), res
  *       200: { description: Resource updated }
  *       403: { description: Not the owner }
  */
-router.get('/:id', authenticate, validate({ params: idParamSchema }), resourceController.getById);
+router.get(
+  "/:id",
+  authenticate,
+  validate({ params: idParamSchema }),
+  resourceController.getById,
+);
 router.put(
-  '/:id',
+  "/:id",
   authenticate,
   validate({ params: idParamSchema, body: updateResourceSchema }),
   resourceController.update,
@@ -136,7 +177,12 @@ router.put(
  *       403: { description: Not the owner }
  *       404: { description: Not found or not visible }
  */
-router.delete('/:id', authenticate, validate({ params: idParamSchema }), resourceController.remove);
+router.delete(
+  "/:id",
+  authenticate,
+  validate({ params: idParamSchema }),
+  resourceController.remove,
+);
 
 /**
  * @openapi
@@ -149,7 +195,7 @@ router.delete('/:id', authenticate, validate({ params: idParamSchema }), resourc
  *       200: { description: Status updated }
  */
 router.patch(
-  '/:id/status',
+  "/:id/status",
   authenticate,
   validate({ params: idParamSchema, body: resourceStatusActionSchema }),
   resourceController.setStatus,
@@ -166,7 +212,7 @@ router.patch(
  *       200: { description: Signed download URL }
  */
 router.get(
-  '/files/:fileId/download-url',
+  "/files/:fileId/download-url",
   authenticate,
   validate({ params: fileIdParamSchema }),
   resourceController.getDownloadUrl,
@@ -182,6 +228,10 @@ router.get(
  *       200: { description: File stream }
  *       401: { description: Invalid or expired link }
  */
-router.get('/files/download', verifyStorageTokenMiddleware('download'), resourceController.download);
+router.get(
+  "/files/download",
+  verifyStorageTokenMiddleware("download"),
+  resourceController.download,
+);
 
 export default router;

@@ -85,6 +85,68 @@ export function useImagePreviewUrl(fileId: string | undefined) {
   });
 }
 
+export function useResourceComments(resourceId: string | undefined) {
+  return useQuery({
+    queryKey: ["resources", "comments", resourceId],
+    queryFn: () => resourceService.listComments(resourceId!),
+    enabled: Boolean(resourceId),
+  });
+}
+
+export function useCreateResourceComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ resourceId, body }: { resourceId: string; body: string }) =>
+      resourceService.createComment(resourceId, body),
+    onSuccess: (_data, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: ["resources", "comments", variables.resourceId],
+      }),
+  });
+}
+
+export function useUpdateResourceComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      commentId,
+      body,
+      resourceId,
+    }: {
+      commentId: string;
+      body: string;
+      resourceId: string;
+    }) => {
+      void resourceId;
+      return resourceService.updateComment(commentId, body);
+    },
+    onSuccess: (_data, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: ["resources", "comments", variables.resourceId],
+      }),
+  });
+}
+
+export function useDeleteResourceComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      commentId,
+      resourceId,
+    }: {
+      commentId: string;
+      resourceId: string;
+    }) => {
+      void resourceId;
+      return resourceService.removeComment(commentId);
+    },
+    onSuccess: (_data, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: ["resources", "comments", variables.resourceId],
+      }),
+  });
+}
+
 interface UploadResourceInput {
   title: string;
   description?: string;

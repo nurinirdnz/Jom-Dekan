@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useModeration } from "../../hooks/useModeration";
-import { AdminLayout } from "../../layouts/AdminLayout";
 import axios from "axios";
 import type { ModerationQueueItem } from "../../types/moderation";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 
-export function AdminModerationQueue() {
+export function AdminModerationQueue({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { queue, isLoadingQueue, handleAction } = useModeration();
   const [reason, setReason] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -36,13 +40,15 @@ export function AdminModerationQueue() {
 
   if (isLoadingQueue) {
     return (
-      <div className="p-8 text-center text-stone-500">
-        Loading moderation queue...
-      </div>
+      <AdminPageShell embedded={embedded}>
+        <div className="p-8 text-center text-stone-500">
+          Loading moderation queue...
+        </div>
+      </AdminPageShell>
     );
   }
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-stone-800 mb-6">
           Admin Moderation Queue
@@ -131,7 +137,7 @@ export function AdminModerationQueue() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }
 

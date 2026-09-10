@@ -34,10 +34,24 @@ export interface ResourceFile {
   updatedAt: string;
 }
 
+export interface ResourceComment {
+  id: string;
+  resourceId: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ResourceListMeta {
   page: number;
   pageSize: number;
   total: number;
 }
 
-export const ALLOWED_RESOURCE_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
+export const ALLOWED_RESOURCE_MIME_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+] as const;

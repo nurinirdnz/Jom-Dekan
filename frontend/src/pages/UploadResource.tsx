@@ -3,18 +3,35 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { uploadResourceFormSchema, type UploadResourceFormValues } from "../schemas/resourceSchemas";
+import {
+  uploadResourceFormSchema,
+  type UploadResourceFormValues,
+} from "../schemas/resourceSchemas";
 import { useUploadResource } from "../hooks/useResources";
+import {
+  useUniversities,
+  useFaculties,
+  useProgrammes,
+  useSubjects,
+} from "../hooks/useTaxonomy";
 
 export default function UploadResource() {
   const navigate = useNavigate();
   const uploadResource = useUploadResource();
   const [progress, setProgress] = useState(0);
+  const { data: universities } = useUniversities();
+  const { data: subjects } = useSubjects();
+  const [universityId, setUniversityId] = useState("");
+  const [facultyId, setFacultyId] = useState("");
+  const [programmeId, setProgrammeId] = useState("");
+  const { data: faculties } = useFaculties(universityId || undefined);
+  const { data: programmes } = useProgrammes(facultyId || undefined);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<UploadResourceFormValues>({
     resolver: zodResolver(uploadResourceFormSchema),
@@ -26,6 +43,10 @@ export default function UploadResource() {
       {
         title: values.title,
         description: values.description,
+        universityId,
+        facultyId,
+        programmeId,
+        subjectId: values.subjectId,
         file: values.file,
         onProgress: setProgress,
       },
@@ -37,15 +58,19 @@ export default function UploadResource() {
 
   const serverError =
     uploadResource.isError && axios.isAxiosError(uploadResource.error)
-      ? (uploadResource.error.response?.data as { error?: { message?: string } })?.error?.message
+      ? (
+          uploadResource.error.response?.data as {
+            error?: { message?: string };
+          }
+        )?.error?.message
       : null;
 
   return (
     <div className="mx-auto max-w-2xl px-[18px] py-[22px]">
       <h1 className="text-2xl font-bold text-slate-900">Upload a resource</h1>
       <p className="mt-1 text-sm text-slate-500">
-        PDF, JPEG, or PNG only, up to 20MB. Every file is checked by its actual content before it's accepted — not
-        just its name or extension.
+        PDF, JPEG, or PNG only, up to 20MB. Every file is checked by its actual
+        content before it's accepted — not just its name or extension.
       </p>
 
       <form
@@ -54,13 +79,19 @@ export default function UploadResource() {
         noValidate
       >
         {serverError && (
-          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+          >
             {serverError}
           </div>
         )}
 
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-slate-700">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-slate-700"
+          >
             Title
           </label>
           <input
@@ -69,11 +100,122 @@ export default function UploadResource() {
             aria-invalid={Boolean(errors.title)}
             {...register("title")}
           />
-          {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>}
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+          )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="universityId"
+              className="block text-sm font-medium text-slate-700"
+            >
+              University
+            </label>
+            <select
+              id="universityId"
+              value={universityId}
+              onChange={(event) => {
+                setUniversityId(event.target.value);
+                setFacultyId("");
+                setProgrammeId("");
+                setValue("facultyId", "");
+                setValue("programmeId", "");
+              }}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">Select university</option>
+              {universities
+                ?.filter((item) => item.isActive)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="facultyId"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Faculty
+            </label>
+            <select
+              id="facultyId"
+              value={facultyId}
+              disabled={!universityId}
+              onChange={(event) => {
+                setFacultyId(event.target.value);
+                setProgrammeId("");
+                setValue("programmeId", "");
+              }}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
+            >
+              <option value="">Select faculty</option>
+              {faculties
+                ?.filter((item) => item.isActive)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="programmeId"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Programme
+            </label>
+            <select
+              id="programmeId"
+              value={programmeId}
+              disabled={!facultyId}
+              onChange={(event) => setProgrammeId(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
+            >
+              <option value="">Select programme</option>
+              {programmes
+                ?.filter((item) => item.isActive)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="subjectId"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Subject
+            </label>
+            <select
+              id="subjectId"
+              {...register("subjectId")}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">Select subject</option>
+              {subjects
+                ?.filter((item) => item.isActive)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.code} · {item.name}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-slate-700"
+          >
             Description (optional)
           </label>
           <textarea
@@ -85,7 +227,10 @@ export default function UploadResource() {
         </div>
 
         <div>
-          <label htmlFor="file" className="block text-sm font-medium text-slate-700">
+          <label
+            htmlFor="file"
+            className="block text-sm font-medium text-slate-700"
+          >
             File
           </label>
           <Controller
@@ -103,12 +248,19 @@ export default function UploadResource() {
               />
             )}
           />
-          {errors.file && <p className="mt-1 text-sm text-red-600">{errors.file.message as string}</p>}
+          {errors.file && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.file.message as string}
+            </p>
+          )}
         </div>
 
         {uploadResource.isPending && (
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full bg-primary-600 transition-all" style={{ width: `${progress}%` }} />
+            <div
+              className="h-full bg-primary-600 transition-all"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         )}
 

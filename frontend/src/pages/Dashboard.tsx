@@ -12,6 +12,8 @@ import { RecommendedResources } from "../components/dashboard/RecommendedResourc
 import { QuickActions } from "../components/dashboard/QuickActions";
 import { RecentActivity } from "../components/dashboard/RecentActivity";
 import { UpcomingSessions } from "../components/dashboard/UpcomingSessions";
+import { AdminAnalyticsPanel } from "./admin/AdminAnalytics";
+import { AdminDashboardPanel } from "../components/dashboard/AdminDashboardPanel";
 
 export default function Dashboard() {
   const user = useCurrentUser();
@@ -23,7 +25,9 @@ export default function Dashboard() {
   const favorites = useFavorites({ page: 1, pageSize: 1 });
   const myPosts = usePosts({ mine: true, page: 1, pageSize: 1 });
   const { notifications, isLoadingNotifications } = useModeration();
-  const unreadCount = notifications.filter((n: Notification) => !n.read_at).length;
+  const unreadCount = notifications.filter(
+    (n: Notification) => !n.read_at,
+  ).length;
 
   const firstName = user?.email ? user.email.split("@")[0] : "";
   const greeting =
@@ -32,6 +36,17 @@ export default function Dashboard() {
       : new Date().getHours() < 18
         ? "Good afternoon"
         : "Good evening";
+
+  if (user?.role === "ADMIN") {
+    return (
+      <div className="mx-auto max-w-[1440px] px-[18px] pt-[22px] pb-[28px]">
+        <AdminAnalyticsPanel />
+        <div className="mt-8">
+          <AdminDashboardPanel />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-[18px] pt-[22px] pb-[28px]">
@@ -50,7 +65,10 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             {isDemoLoading || !user ? (
-              <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-white/20 sm:h-12 sm:w-12" aria-hidden="true" />
+              <div
+                className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-white/20 sm:h-12 sm:w-12"
+                aria-hidden="true"
+              />
             ) : (
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F5C21A] text-base font-semibold text-[#231C57] shadow-sm ring-2 ring-white/20 transition motion-safe:duration-150 hover:-translate-y-0.5 hover:shadow-md sm:h-12 sm:w-12 sm:text-lg"
@@ -69,7 +87,8 @@ export default function Dashboard() {
               ) : (
                 <>
                   <h1 className="truncate text-xl font-bold text-white sm:text-2xl">
-                    {greeting}{firstName ? `, ${firstName}` : ""}!
+                    {greeting}
+                    {firstName ? `, ${firstName}` : ""}!
                   </h1>
                   <p className="mt-1 text-sm text-[#C6C2EC]">
                     Here&apos;s what&apos;s happening with your studies today.
@@ -133,21 +152,21 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="flex flex-col gap-6 xl:col-span-2">
-          <RecommendedResources forceLoading={isDemoLoading} />
-          <RecentActivity forceLoading={isDemoLoading} />
+      <>
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="flex flex-col gap-6 xl:col-span-2">
+            <RecommendedResources forceLoading={isDemoLoading} />
+            <RecentActivity forceLoading={isDemoLoading} />
+          </div>
+          <div className="flex flex-col gap-6">
+            <UpcomingSessions />
+          </div>
         </div>
-        <div className="flex flex-col gap-6">
-          <UpcomingSessions />
-        </div>
-      </div>
 
-      {/* Full-width row, below the resources/activity grid — not a
-          right-column widget. */}
-      <div className="mt-6">
-        <QuickActions />
-      </div>
+        <div className="mt-6">
+          <QuickActions />
+        </div>
+      </>
     </div>
   );
 }

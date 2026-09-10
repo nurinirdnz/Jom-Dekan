@@ -93,6 +93,13 @@ export const taxonomyModel = {
   },
 
   faculties: {
+    async findById(id: string): Promise<FacultyRow | null> {
+      const result = await pool.query<FacultyRow>(
+        `SELECT * FROM faculties WHERE id = $1`,
+        [id],
+      );
+      return result.rows[0] ?? null;
+    },
     async listByUniversity(universityId: string): Promise<FacultyRow[]> {
       const result = await pool.query<FacultyRow>(
         `SELECT * FROM faculties WHERE university_id = $1 ORDER BY is_active DESC, name ASC`,
@@ -131,6 +138,13 @@ export const taxonomyModel = {
   },
 
   programmes: {
+    async findById(id: string): Promise<ProgrammeRow | null> {
+      const result = await pool.query<ProgrammeRow>(
+        `SELECT * FROM programmes WHERE id = $1`,
+        [id],
+      );
+      return result.rows[0] ?? null;
+    },
     async listByFaculty(facultyId: string): Promise<ProgrammeRow[]> {
       const result = await pool.query<ProgrammeRow>(
         `SELECT * FROM programmes WHERE faculty_id = $1 ORDER BY is_active DESC, name ASC`,
@@ -173,6 +187,13 @@ export const taxonomyModel = {
   },
 
   subjects: {
+    async findById(id: string): Promise<SubjectRow | null> {
+      const result = await pool.query<SubjectRow>(
+        `SELECT * FROM subjects WHERE id = $1`,
+        [id],
+      );
+      return result.rows[0] ?? null;
+    },
     async list(): Promise<SubjectRow[]> {
       const result = await pool.query<SubjectRow>(
         `SELECT * FROM subjects ORDER BY is_active DESC, name ASC`,

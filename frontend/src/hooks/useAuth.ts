@@ -1,8 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../service/authService';
-import { useAuthStore } from '../store/useAuthStore';
-import type { ForgotPasswordFormValues, LoginFormValues, RegisterFormValues } from '../schemas/authSchemas';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { authService } from "../service/authService";
+import { useAuthStore } from "../store/useAuthStore";
+import type {
+  ForgotPasswordFormValues,
+  LoginFormValues,
+  RegisterFormValues,
+} from "../schemas/authSchemas";
 
 export function useCurrentUser() {
   return useAuthStore((s) => s.user);
@@ -18,7 +22,7 @@ export function useLogin() {
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
       queryClient.invalidateQueries();
-      navigate(data.user.role === 'ADMIN' ? '/admin/universities' : '/dashboard');
+      navigate("/dashboard");
     },
   });
 }
@@ -31,7 +35,7 @@ export function useRegister() {
     mutationFn: (values: RegisterFormValues) => authService.register(values),
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
-      navigate(data.user.role === 'ADMIN' ? '/admin/universities' : '/dashboard');
+      navigate("/dashboard");
     },
   });
 }
@@ -46,14 +50,15 @@ export function useLogout() {
     onSettled: () => {
       clearSession();
       queryClient.clear();
-      navigate('/login');
+      navigate("/login");
     },
   });
 }
 
 export function useForgotPassword() {
   return useMutation({
-    mutationFn: (values: ForgotPasswordFormValues) => authService.forgotPassword(values),
+    mutationFn: (values: ForgotPasswordFormValues) =>
+      authService.forgotPassword(values),
   });
 }
 
@@ -61,9 +66,10 @@ export function useResetPassword() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (values: { token: string; newPassword: string }) => authService.resetPassword(values),
+    mutationFn: (values: { token: string; newPassword: string }) =>
+      authService.resetPassword(values),
     onSuccess: () => {
-      navigate('/login');
+      navigate("/login");
     },
   });
 }

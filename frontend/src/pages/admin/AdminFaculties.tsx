@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import axios from "axios";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import {
   useUniversities,
   useFaculties,
@@ -18,7 +18,11 @@ const facultyNameSchema = z.object({
 });
 type FacultyNameValues = z.infer<typeof facultyNameSchema>;
 
-export default function AdminFaculties() {
+export default function AdminFaculties({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { data: universities } = useUniversities();
   const [universityId, setUniversityId] = useState("");
 
@@ -52,7 +56,7 @@ export default function AdminFaculties() {
       : null;
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <h1 className="text-2xl font-bold text-slate-900">Faculties</h1>
       <p className="mt-1 text-sm text-slate-500">
         Pick a university to manage its faculties. Only admins can create, edit,
@@ -184,6 +188,6 @@ export default function AdminFaculties() {
           </div>
         </>
       )}
-    </AdminLayout>
+    </AdminPageShell>
   );
 }

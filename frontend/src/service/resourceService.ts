@@ -2,6 +2,7 @@ import axiosInstance from "../api/axiosInstance";
 import type {
   Resource,
   ResourceFile,
+  ResourceComment,
   ResourceListItem,
   ResourceListMeta,
 } from "../types/resource";
@@ -20,6 +21,10 @@ function toAbsoluteApiUrl(path: string): string {
   const base = axiosInstance.defaults.baseURL ?? "";
   const origin = new URL(base, window.location.origin).origin;
   return new URL(path, origin).toString();
+}
+
+function optionalId(value: string | undefined) {
+  return value || undefined;
 }
 
 interface UploadIntentInput {
@@ -58,7 +63,13 @@ export const resourceService = {
   ): Promise<UploadIntentResult> => {
     const res = await axiosInstance.post<{ data: UploadIntentResult }>(
       "/resources/upload-intent",
-      data,
+      {
+        ...data,
+        universityId: optionalId(data.universityId),
+        facultyId: optionalId(data.facultyId),
+        programmeId: optionalId(data.programmeId),
+        subjectId: optionalId(data.subjectId),
+      },
     );
     return res.data.data;
   },
@@ -115,6 +126,39 @@ export const resourceService = {
       data: { resource: Resource; files: ResourceFile[] };
     }>(`/resources/${id}`);
     return res.data.data;
+  },
+
+  listComments: async (resourceId: string): Promise<ResourceComment[]> => {
+    const res = await axiosInstance.get<{ data: ResourceComment[] }>(
+      `/resources/${resourceId}/comments`,
+    );
+    return res.data.data;
+  },
+
+  createComment: async (
+    resourceId: string,
+    body: string,
+  ): Promise<ResourceComment> => {
+    const res = await axiosInstance.post<{ data: ResourceComment }>(
+      `/resources/${resourceId}/comments`,
+      { body },
+    );
+    return res.data.data;
+  },
+
+  updateComment: async (
+    commentId: string,
+    body: string,
+  ): Promise<ResourceComment> => {
+    const res = await axiosInstance.put<{ data: ResourceComment }>(
+      `/resources/comments/${commentId}`,
+      { body },
+    );
+    return res.data.data;
+  },
+
+  removeComment: async (commentId: string): Promise<void> => {
+    await axiosInstance.delete(`/resources/comments/${commentId}`);
   },
 
   update: async (

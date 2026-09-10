@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AdminLayout } from "../../layouts/AdminLayout";
+import { AdminPageShell } from "../../layouts/AdminPageShell";
 import {
   useAdminUserProfile,
   useAdminUserResources,
@@ -11,24 +11,27 @@ import {
 const PAGE_SIZE = 20;
 type Tab = "resources" | "forum" | "applications";
 
-export function AdminUserDetail() {
-  const { id } = useParams<{ id: string }>();
+export function AdminUserDetail({
+  embedded = false,
+  userId,
+  onBack,
+}: {
+  embedded?: boolean;
+  userId?: string;
+  onBack?: () => void;
+}) {
+  const routeParams = useParams<{ id: string }>();
+  const id = userId ?? routeParams.id;
   const [tab, setTab] = useState<Tab>("resources");
   const [page, setPage] = useState(1);
 
   const { data: profile, isLoading: profileLoading } = useAdminUserProfile(id);
-  const resources = useAdminUserResources(
-    id,
-    { page, pageSize: PAGE_SIZE },
-  );
-  const forum = useAdminUserForumActivity(
-    id,
-    { page, pageSize: PAGE_SIZE },
-  );
-  const applications = useAdminUserApplications(
-    id,
-    { page, pageSize: PAGE_SIZE },
-  );
+  const resources = useAdminUserResources(id, { page, pageSize: PAGE_SIZE });
+  const forum = useAdminUserForumActivity(id, { page, pageSize: PAGE_SIZE });
+  const applications = useAdminUserApplications(id, {
+    page,
+    pageSize: PAGE_SIZE,
+  });
 
   const active =
     tab === "resources" ? resources : tab === "forum" ? forum : applications;
@@ -42,18 +45,31 @@ export function AdminUserDetail() {
 
   if (profileLoading) {
     return (
-      <AdminLayout>
+      <AdminPageShell embedded={embedded}>
         <div className="p-8 text-center text-stone-500">Loading…</div>
-      </AdminLayout>
+      </AdminPageShell>
     );
   }
 
   return (
-    <AdminLayout>
+    <AdminPageShell embedded={embedded}>
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <Link to="/admin/users" className="text-sm text-primary-600 hover:underline">
-          ← Back to users
-        </Link>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-sm text-primary-600 hover:underline"
+          >
+            ← Back to users
+          </button>
+        ) : (
+          <Link
+            to="/admin/users"
+            className="text-sm text-primary-600 hover:underline"
+          >
+            ← Back to users
+          </Link>
+        )}
 
         {profile && (
           <div className="mt-3 mb-6">
@@ -68,13 +84,11 @@ export function AdminUserDetail() {
         )}
 
         <div className="mb-4 flex gap-2 border-b border-stone-200">
-          {(
-            [
-              { key: "resources" as Tab, label: "Resources" },
-              { key: "forum" as Tab, label: "Forum" },
-              { key: "applications" as Tab, label: "Marketplace applications" },
-            ]
-          ).map((t) => (
+          {[
+            { key: "resources" as Tab, label: "Resources" },
+            { key: "forum" as Tab, label: "Forum" },
+            { key: "applications" as Tab, label: "Marketplace applications" },
+          ].map((t) => (
             <button
               key={t.key}
               type="button"
@@ -121,7 +135,10 @@ export function AdminUserDetail() {
             forum.data?.data.length ? (
               <ul className="divide-y">
                 {forum.data.data.map((item) => (
-                  <li key={`${item.type}-${item.id}`} className="p-4 hover:bg-stone-50">
+                  <li
+                    key={`${item.type}-${item.id}`}
+                    className="p-4 hover:bg-stone-50"
+                  >
                     <Link
                       to={`/forum/${item.postId}`}
                       className="font-medium text-stone-800 hover:text-primary-700"
@@ -192,7 +209,7 @@ export function AdminUserDetail() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </AdminPageShell>
   );
 }
 

@@ -90,8 +90,8 @@ export function Header() {
           {user ? (
             <>
               {user.role === "ADMIN" && (
-                <NavLink to="/admin/universities" className={navLinkClass}>
-                  Admin
+                <NavLink to="/dashboard" className={navLinkClass}>
+                  Admin dashboard
                 </NavLink>
               )}
               {user.role !== "ADMIN" && (
@@ -135,12 +135,16 @@ export function Header() {
                       <div
                         role="menu"
                         className={`absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg transition motion-safe:duration-150 ${
-                          isMenuEntered ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-1 scale-95"
+                          isMenuEntered
+                            ? "opacity-100 translate-y-0 scale-100"
+                            : "opacity-0 -translate-y-1 scale-95"
                         }`}
                       >
                         <div className="px-3 py-2 text-xs text-slate-400">
                           Signed in as
-                          <p className="truncate text-sm font-medium text-slate-700">{user.email}</p>
+                          <p className="truncate text-sm font-medium text-slate-700">
+                            {user.email}
+                          </p>
                         </div>
                         <div className="my-1 border-t border-slate-100" />
                         {PROFILE_MENU_ITEMS.map(({ label, icon: Icon, to }) =>
