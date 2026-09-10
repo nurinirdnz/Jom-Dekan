@@ -11,3 +11,30 @@ body,
 #root {
   height: 100%;
 }
+
+/* Tailwind emits `.h-dvh` before `.h-screen` in its generated stylesheet,
+   so stacking the utility classes `h-screen h-dvh` would let `h-screen`
+   (equal specificity, later rule) win in every browser — the opposite of
+   the intended vh-fallback/dvh-preferred behavior. Declaring both in one
+   rule instead relies on the browser dropping the unsupported value at
+   parse time, which is the only order-independent way to get a real
+   fallback. */
+.h-dvh-with-fallback {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Used via Tailwind's arbitrary `animate-[fadeIn_150ms_ease-out]` for
+   small popovers/dropdowns (sidebar notifications, mobile drawer, etc.)
+   — can't add this as a `tailwind.config.ts` keyframe without touching
+   shared config, so it's a plain global keyframe instead. */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
