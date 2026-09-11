@@ -22,7 +22,7 @@ export function useLogin() {
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
       queryClient.invalidateQueries();
-      navigate("/dashboard");
+      navigate(data.user.role === "ADMIN" ? "/admin" : "/dashboard");
     },
   });
 }
@@ -46,7 +46,7 @@ export function useRegister() {
       }),
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
-      navigate("/dashboard");
+      navigate(data.user.role === "ADMIN" ? "/admin" : "/dashboard");
     },
   });
 }

@@ -79,3 +79,22 @@ export const createSubjectSchema = z
 export const updateSubjectSchema = z
   .object({ name: z.string().trim().min(2).max(200) })
   .strict();
+export const listSubjectsQuerySchema = z
+  .object({ programmeId: z.string().uuid("programmeId must be a valid id.").optional() })
+  .strict();
+
+// ---- Programme <-> Subject links ----
+export const linkProgrammeSubjectSchema = z
+  .object({
+    subjectId: z.string().uuid("subjectId must be a valid id."),
+    curriculumYear: z.coerce.number().int().min(2000).max(2100).optional(),
+    recommendedYear: z.coerce.number().int().min(1).max(8).optional(),
+    recommendedSemester: z.coerce.number().int().min(1).max(10).optional(),
+  })
+  .strict();
+export const unlinkProgrammeSubjectParamsSchema = z
+  .object({
+    id: z.string().uuid("Invalid id."),
+    subjectId: z.string().uuid("Invalid id."),
+  })
+  .strict();

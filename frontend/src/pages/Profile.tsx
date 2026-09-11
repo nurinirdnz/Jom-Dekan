@@ -28,7 +28,12 @@ export default function Profile() {
     formState: { errors, isSubmitting },
   } = useForm<UpdateProfileFormValues>({ resolver: zodResolver(updateProfileFormSchema) });
 
-  const { data: universities } = useUniversities();
+  const {
+    data: universities,
+    isLoading: universitiesLoading,
+    isError: universitiesError,
+    refetch: refetchUniversities,
+  } = useUniversities();
   const universityOptions = (universities ?? []).map((u) => ({ value: u.id, label: u.name }));
   const fieldOfStudyOptions = FIELDS_OF_STUDY.map((field) => ({ value: field, label: field }));
 
@@ -249,13 +254,27 @@ export default function Profile() {
                     value={field.value ?? ''}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder="Search for your university…"
+                    disabled={!isEditing || universitiesLoading || universitiesError}
+                    placeholder={
+                      universitiesLoading
+                        ? 'Loading universities…'
+                        : universitiesError
+                          ? 'Could not load universities.'
+                          : 'Search for your university…'
+                    }
                     ariaInvalid={Boolean(errors.universityId)}
-                    disabled={!isEditing}
                   />
                 )}
               />
               {errors.universityId && <span className="text-xs text-red-600">{errors.universityId.message}</span>}
+              {universitiesError && (
+                <span className="text-xs text-red-600">
+                  Couldn't load the list of universities.{' '}
+                  <button type="button" onClick={() => refetchUniversities()} className="font-medium underline">
+                    Try again
+                  </button>
+                </span>
+              )}
             </label>
 
             <label className="flex flex-col gap-1.5">

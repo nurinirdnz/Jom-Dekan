@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
@@ -7,19 +8,27 @@ import { useRegister } from '../hooks/useAuth';
 import { useUniversities } from '../hooks/useTaxonomy';
 import { FIELDS_OF_STUDY } from '../constants/fieldsOfStudy';
 import { SearchableSelect } from '../components/common/SearchableSelect';
+import { TermsModal } from '../components/common/TermsModal';
 
 const CURRENT_SEMESTER_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 export default function Register() {
   const registerAccount = useRegister();
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerFormSchema) });
 
-  const { data: universities } = useUniversities();
+  const {
+    data: universities,
+    isLoading: universitiesLoading,
+    isError: universitiesError,
+    refetch: refetchUniversities,
+  } = useUniversities();
   const universityOptions = (universities ?? []).map((u) => ({ value: u.id, label: u.name }));
   const fieldOfStudyOptions = FIELDS_OF_STUDY.map((field) => ({ value: field, label: field }));
 
@@ -121,12 +130,27 @@ export default function Register() {
                 value={field.value ?? ''}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Search for your university…"
+                disabled={universitiesLoading || universitiesError}
+                placeholder={
+                  universitiesLoading
+                    ? 'Loading universities…'
+                    : universitiesError
+                      ? 'Could not load universities.'
+                      : 'Search for your university…'
+                }
                 ariaInvalid={Boolean(errors.universityId)}
               />
             )}
           />
           {errors.universityId && <p className="mt-1 text-sm text-red-600">{errors.universityId.message}</p>}
+          {universitiesError && (
+            <p className="mt-1 text-sm text-red-600">
+              Couldn't load the list of universities.{' '}
+              <button type="button" onClick={() => refetchUniversities()} className="font-medium underline">
+                Try again
+              </button>
+            </p>
+          )}
         </div>
 
         <div>
@@ -194,19 +218,26 @@ export default function Register() {
             <input type="checkbox" className="mt-0.5" {...register('termsAccepted')} />
             <span>
               I agree to the{' '}
-              <details className="inline">
-                <summary className="inline cursor-pointer font-medium text-primary-700 hover:underline">
-                  Terms &amp; Conditions
-                </summary>
-                <p className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-                  By creating a JomDekan account, you agree to use the platform respectfully, only upload material
-                  you have the right to share, and understand that violations may result in account suspension.
-                </p>
-              </details>
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(true)}
+                className="font-medium text-primary-700 underline-offset-2 hover:underline"
+              >
+                Terms &amp; Conditions
+              </button>
             </span>
           </label>
           {errors.termsAccepted && <p className="mt-1 text-sm text-red-600">{errors.termsAccepted.message}</p>}
         </div>
+
+        <TermsModal
+          isOpen={isTermsOpen}
+          onClose={() => setIsTermsOpen(false)}
+          onAccept={() => {
+            setValue('termsAccepted', true, { shouldValidate: true });
+            setIsTermsOpen(false);
+          }}
+        />
 
         <button
           type="submit"

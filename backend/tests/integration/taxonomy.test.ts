@@ -125,4 +125,79 @@ describe("Taxonomy API", () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
+
+  describe("subject <-> programme scoping", () => {
+    let universityId = "";
+    let facultyId = "";
+    let programmeId = "";
+    let subjectId = "";
+
+    beforeAll(async () => {
+      if (skip) return;
+      const taxonomy = await seededTaxonomy();
+      universityId = taxonomy!.universityId;
+
+      const facultyRes = await request(app)
+        .post("/api/v1/taxonomy/faculties")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ universityId, name: `Test Faculty ${Date.now()}` });
+      facultyId = facultyRes.body.data.id;
+
+      const programmeRes = await request(app)
+        .post("/api/v1/taxonomy/programmes")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ facultyId, name: `Test Programme ${Date.now()}` });
+      programmeId = programmeRes.body.data.id;
+
+      const subjectRes = await request(app)
+        .post("/api/v1/taxonomy/subjects")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ code: `TST${Date.now() % 100000}`, name: "Test Subject" });
+      subjectId = subjectRes.body.data.id;
+    });
+
+    it("returns no subjects for a freshly created programme", async () => {
+      if (skip) return;
+      const res = await request(app)
+        .get("/api/v1/taxonomy/subjects")
+        .query({ programmeId })
+        .set("Authorization", `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+    });
+
+    it("lets an ADMIN link a subject to a programme, and it then shows up scoped", async () => {
+      if (skip) return;
+      const linkRes = await request(app)
+        .post(`/api/v1/taxonomy/programmes/${programmeId}/subjects`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ subjectId });
+      expect(linkRes.status).toBe(201);
+      expect(linkRes.body.data.some((s: { id: string }) => s.id === subjectId)).toBe(true);
+
+      const scopedRes = await request(app)
+        .get("/api/v1/taxonomy/subjects")
+        .query({ programmeId })
+        .set("Authorization", `Bearer ${adminToken}`);
+      expect(scopedRes.body.data.map((s: { id: string }) => s.id)).toEqual([subjectId]);
+    });
+
+    it("rejects a non-admin from linking a subject", async () => {
+      if (skip) return;
+      const res = await request(app)
+        .post(`/api/v1/taxonomy/programmes/${programmeId}/subjects`)
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({ subjectId });
+      expect(res.status).toBe(403);
+    });
+
+    it("lets an ADMIN unlink a subject, removing it from the scoped list", async () => {
+      if (skip) return;
+      const unlinkRes = await request(app)
+        .delete(`/api/v1/taxonomy/programmes/${programmeId}/subjects/${subjectId}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+      expect(unlinkRes.status).toBe(200);
+      expect(unlinkRes.body.data).toEqual([]);
+    });
+  });
 });

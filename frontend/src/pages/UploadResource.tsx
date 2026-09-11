@@ -33,12 +33,12 @@ export default function UploadResource() {
   const { data: profile } = useMyProfile();
   const [progress, setProgress] = useState(0);
   const { data: universities } = useUniversities();
-  const { data: subjects } = useSubjects();
   const [universityId, setUniversityId] = useState("");
   const [facultyId, setFacultyId] = useState("");
   const [programmeId, setProgrammeId] = useState("");
   const { data: faculties } = useFaculties(universityId || undefined);
   const { data: programmes } = useProgrammes(facultyId || undefined);
+  const { data: subjects } = useSubjects(programmeId || undefined);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const {
@@ -185,6 +185,7 @@ export default function UploadResource() {
                 setProgrammeId("");
                 setValue("facultyId", "");
                 setValue("programmeId", "");
+                setValue("subjectId", "");
               }}
               placeholder="Search for a university…"
             />
@@ -203,6 +204,7 @@ export default function UploadResource() {
                 setFacultyId(value);
                 setProgrammeId("");
                 setValue("programmeId", "");
+                setValue("subjectId", "");
               }}
               disabled={!universityId}
               placeholder={universityId ? "Search for a faculty…" : "Select a university first"}
@@ -218,7 +220,10 @@ export default function UploadResource() {
                 .filter((item) => item.isActive)
                 .map((item) => ({ value: item.id, label: item.name }))}
               value={programmeId}
-              onChange={setProgrammeId}
+              onChange={(value) => {
+                setProgrammeId(value);
+                setValue("subjectId", "");
+              }}
               disabled={!facultyId}
               placeholder={facultyId ? "Search for a programme…" : "Select a faculty first"}
             />
@@ -239,10 +244,16 @@ export default function UploadResource() {
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder="Search for a subject…"
+                  disabled={!programmeId}
+                  placeholder={programmeId ? "Search for a subject…" : "Select a programme first"}
                 />
               )}
             />
+            {programmeId && subjects && subjects.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500">
+                No subjects are linked to this programme yet.
+              </p>
+            )}
           </div>
         </div>
 
