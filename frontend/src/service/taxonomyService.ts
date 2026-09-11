@@ -118,9 +118,10 @@ export const taxonomyService = {
     return res.data.data;
   },
 
-  listSubjects: async (): Promise<Subject[]> => {
+  listSubjects: async (programmeId?: string): Promise<Subject[]> => {
     const res = await axiosInstance.get<{ data: Subject[] }>(
       "/taxonomy/subjects",
+      { params: programmeId ? { programmeId } : undefined },
     );
     return res.data.data;
   },
@@ -148,6 +149,26 @@ export const taxonomyService = {
     const res = await axiosInstance.patch<{ data: Subject }>(
       `/taxonomy/subjects/${id}/status`,
       { isActive },
+    );
+    return res.data.data;
+  },
+
+  linkSubjectToProgramme: async (
+    programmeId: string,
+    data: { subjectId: string; curriculumYear?: number },
+  ): Promise<Subject[]> => {
+    const res = await axiosInstance.post<{ data: Subject[] }>(
+      `/taxonomy/programmes/${programmeId}/subjects`,
+      data,
+    );
+    return res.data.data;
+  },
+  unlinkSubjectFromProgramme: async (
+    programmeId: string,
+    subjectId: string,
+  ): Promise<Subject[]> => {
+    const res = await axiosInstance.delete<{ data: Subject[] }>(
+      `/taxonomy/programmes/${programmeId}/subjects/${subjectId}`,
     );
     return res.data.data;
   },

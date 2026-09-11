@@ -16,6 +16,9 @@ import {
   listProgrammesQuerySchema,
   createSubjectSchema,
   updateSubjectSchema,
+  listSubjectsQuerySchema,
+  linkProgrammeSubjectSchema,
+  unlinkProgrammeSubjectParamsSchema,
 } from "../validators/taxonomyValidators";
 
 const router = Router();
@@ -156,12 +159,22 @@ router.patch(
  * /taxonomy/subjects:
  *   get:
  *     tags: [Taxonomy]
- *     summary: List subjects
+ *     summary: List subjects, optionally scoped to a programme
  *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: programmeId
+ *         required: false
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200: { description: List of subjects }
  */
-router.get("/subjects", authenticate, taxonomyController.listSubjects);
+router.get(
+  "/subjects",
+  authenticate,
+  validate({ query: listSubjectsQuerySchema }),
+  taxonomyController.listSubjects,
+);
 router.post(
   "/subjects",
   authenticate,
@@ -182,6 +195,38 @@ router.patch(
   authorize("ADMIN"),
   validate({ params: idParamSchema, body: statusSchema }),
   taxonomyController.setSubjectStatus,
+);
+
+/**
+ * @openapi
+ * /taxonomy/programmes/{id}/subjects:
+ *   post:
+ *     tags: [Taxonomy]
+ *     summary: Link a subject to a programme (ADMIN only)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       201: { description: Linked }
+ * /taxonomy/programmes/{id}/subjects/{subjectId}:
+ *   delete:
+ *     tags: [Taxonomy]
+ *     summary: Unlink a subject from a programme (ADMIN only)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Unlinked }
+ */
+router.post(
+  "/programmes/:id/subjects",
+  authenticate,
+  authorize("ADMIN"),
+  validate({ params: idParamSchema, body: linkProgrammeSubjectSchema }),
+  taxonomyController.linkProgrammeSubject,
+);
+router.delete(
+  "/programmes/:id/subjects/:subjectId",
+  authenticate,
+  authorize("ADMIN"),
+  validate({ params: unlinkProgrammeSubjectParamsSchema }),
+  taxonomyController.unlinkProgrammeSubject,
 );
 
 export default router;
