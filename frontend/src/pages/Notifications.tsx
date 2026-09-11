@@ -12,7 +12,7 @@ export default function Notifications() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-[18px] py-[22px]">
+    <div className="mx-auto max-w-6xl px-[18px] py-[22px]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>

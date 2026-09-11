@@ -1,10 +1,67 @@
 import { useMemo, useState } from "react";
 import axios from "axios";
-import { UserPlus, X, Check, Wifi, MapPin, Shuffle, CalendarClock } from "lucide-react";
+import { UserPlus, X, Check, Wifi, MapPin, Shuffle, CalendarClock, Phone, Mail, Link as LinkIcon, GraduationCap } from "lucide-react";
 import { useOpportunities } from "../../hooks/useOpportunities";
 import { EmptyState } from "../common/EmptyState";
+import { FavoriteButton } from "../common/FavoriteButton";
+import { ReportButton } from "../common/ReportButton";
 import { MarketplaceCardSkeleton } from "./MarketplaceCardSkeleton";
 import type { Opportunity, OpportunityMode } from "../../types/opportunity";
+
+// The tutor application form (below) writes subjects, rate, contact info
+// etc. into one free-text `description` in a fixed layout — there's no
+// structured column for any of it yet. Parse that same fixed layout back
+// out so the card/detail view can show real subjects, rate and contact
+// info instead of a raw text blob. Listings that don't match (created
+// some other way) just fall back to showing the raw description.
+interface ParsedTutorListing {
+  subjects?: string;
+  rate?: string;
+  level?: string;
+  qualification?: string;
+  availability?: string;
+  phone?: string;
+  email?: string;
+  portfolio?: string;
+  pitch?: string;
+}
+
+function parseTutorListing(description: string): ParsedTutorListing {
+  const result: ParsedTutorListing = {};
+  const pitchLines: string[] = [];
+  let inPitch = false;
+
+  for (const raw of description.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      if (Object.keys(result).length > 0) inPitch = true;
+      continue;
+    }
+    if (!inPitch) {
+      const match = line.match(/^(Subjects|Rate|Year\/Level|Qualification|Availability|Contact|Portfolio):\s*(.*)$/);
+      if (match) {
+        const [, key, value] = match;
+        if (key === "Subjects") result.subjects = value;
+        else if (key === "Rate") result.rate = value;
+        else if (key === "Year/Level") result.level = value;
+        else if (key === "Qualification") result.qualification = value;
+        else if (key === "Availability") result.availability = value;
+        else if (key === "Portfolio") result.portfolio = value;
+        else if (key === "Contact") {
+          const [phone, email] = value.split("·").map((s) => s.trim());
+          result.phone = phone;
+          result.email = email;
+        }
+        continue;
+      }
+    }
+    inPitch = true;
+    pitchLines.push(line);
+  }
+
+  if (pitchLines.length) result.pitch = pitchLines.join("\n").trim();
+  return result;
+}
 
 const MODE_ICON: Record<OpportunityMode, typeof Wifi> = {
   ONLINE: Wifi,
@@ -124,6 +181,8 @@ export function TutoringView() {
 
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [coverMessage, setCoverMessage] = useState("");
+  const [detailOppId, setDetailOppId] = useState<string | null>(null);
+  const detailOpp = tutors.find((t) => t.id === detailOppId) ?? null;
 
   function updateForm<K extends keyof ApplyForm>(key: K, value: ApplyForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -303,29 +362,64 @@ export function TutoringView() {
                   .join("")
                   .slice(0, 2)
                   .toUpperCase();
+                const parsed = parseTutorListing(opp.description);
+                const subjectTags = parsed.subjects
+                  ? parsed.subjects.split(",").map((s) => s.trim()).filter(Boolean)
+                  : [];
                 return (
                   <article
                     key={opp.id}
-                    className="flex flex-col gap-3 rounded-[20px] border border-[#ECEBF7] bg-white p-[18px] transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDetailOppId(opp.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDetailOppId(opp.id);
+                      }
+                    }}
+                    className="flex cursor-pointer flex-col gap-3 rounded-[20px] border border-[#ECEBF7] bg-white p-[18px] text-left transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4338CA] to-[#6D63E8] text-sm font-bold text-white">
-                        {initials}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-[15.5px] font-bold text-slate-900">{opp.owner_name || "A JomDekan student"}</p>
-                        {opp.subject_name && <p className="truncate text-xs font-semibold text-primary-600">{opp.subject_name}</p>}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4338CA] to-[#6D63E8] text-sm font-bold text-white">
+                          {initials}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[15.5px] font-bold text-slate-900">{opp.owner_name || "A JomDekan student"}</p>
+                          {opp.subject_name && <p className="truncate text-xs font-semibold text-primary-600">{opp.subject_name}</p>}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <FavoriteButton targetType="opportunity" targetId={opp.id} />
+                        <ReportButton targetType="opportunity" targetId={opp.id} />
                       </div>
                     </div>
-                    <p className="line-clamp-2 text-sm text-slate-600">{opp.description}</p>
+                    {subjectTags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {subjectTags.map((s) => (
+                          <span key={s} className="rounded-full bg-[#F1F0FA] px-2.5 py-1 text-[11px] font-bold text-primary-700">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="line-clamp-2 text-sm text-slate-600">{opp.description}</p>
+                    )}
                     <div className="flex items-center justify-between gap-3 border-t border-[#F4F3FB] pt-3">
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                        <ModeIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                        {MODE_LABEL[opp.mode]}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        {parsed.rate && <span className="text-sm font-extrabold text-slate-900">{parsed.rate}</span>}
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                          <ModeIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                          {MODE_LABEL[opp.mode]}
+                        </span>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setSelectedOpp(opp.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOpp(opp.id);
+                        }}
                         className="rounded-full bg-primary-600 px-4 py-2 text-xs font-bold text-white transition motion-safe:duration-150 hover:-translate-y-0.5 hover:bg-primary-700"
                       >
                         Apply / Inquire
@@ -610,6 +704,170 @@ export function TutoringView() {
           </div>
         </div>
       )}
+
+      {/* Tutor detail view — opened by clicking a card. Shows the real
+          contact info the tutor submitted (currently buried in the
+          description text and shown nowhere else), so a student can
+          actually reach them directly, plus a way into the existing
+          apply/inquire flow. */}
+      {detailOpp && (() => {
+        const parsed = parseTutorListing(detailOpp.description);
+        const ModeIcon = MODE_ICON[detailOpp.mode];
+        const subjectTags = parsed.subjects
+          ? parsed.subjects.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        const initials = (detailOpp.owner_name || "JD")
+          .split(" ")
+          .map((p) => p[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
+
+        return (
+          <div role="dialog" aria-modal="true" aria-label="Tutor details" className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 py-8">
+            <div className="w-full max-w-[560px] overflow-hidden rounded-[24px] bg-white shadow-2xl">
+              <div
+                className="flex items-start justify-between gap-4 p-[22px] text-white"
+                style={{ background: "radial-gradient(120% 160% at 88% 8%, #4A3FD1 0%, #2E2372 55%, #231C57 100%)" }}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-sm font-bold text-white">
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-extrabold">{detailOpp.owner_name || "A JomDekan student"}</h2>
+                    {detailOpp.subject_name && <p className="truncate text-sm font-medium text-[#C6C2EC]">{detailOpp.subject_name}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailOppId(null)}
+                  aria-label="Close"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white hover:bg-white/20"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto p-[22px]">
+                <div className="flex flex-wrap gap-4">
+                  {parsed.rate && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Rate</p>
+                      <p className="text-sm font-extrabold text-slate-900">{parsed.rate}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mode</p>
+                    <p className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                      <ModeIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                      {MODE_LABEL[detailOpp.mode]}
+                    </p>
+                  </div>
+                  {parsed.level && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Year / level</p>
+                      <p className="text-sm font-bold text-slate-700">{parsed.level}</p>
+                    </div>
+                  )}
+                </div>
+
+                {subjectTags.length > 0 && (
+                  <section>
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">SUBJECTS TAUGHT</h3>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {subjectTags.map((s) => (
+                        <span key={s} className="rounded-full bg-[#F1F0FA] px-2.5 py-1 text-[11px] font-bold text-primary-700">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {parsed.qualification && (
+                  <section className="flex items-start gap-3 rounded-xl border border-[#ECEBF7] p-3.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F1F0FA] text-primary-700">
+                      <GraduationCap className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-800">Qualification</p>
+                      <p className="text-xs text-slate-500">{parsed.qualification}</p>
+                    </div>
+                  </section>
+                )}
+
+                {parsed.availability && (
+                  <section>
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">AVAILABILITY</h3>
+                    <p className="mt-1.5 text-sm text-slate-600">{parsed.availability}</p>
+                  </section>
+                )}
+
+                {parsed.pitch && (
+                  <section>
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">WHY THIS TUTOR</h3>
+                    <p className="mt-1.5 whitespace-pre-line text-sm text-slate-600">{parsed.pitch}</p>
+                  </section>
+                )}
+
+                {!parsed.subjects && !parsed.rate && (
+                  <p className="whitespace-pre-line text-sm text-slate-600">{detailOpp.description}</p>
+                )}
+
+                {(parsed.phone || parsed.email || parsed.portfolio) && (
+                  <section className="flex flex-col gap-2 rounded-xl bg-[#F8F8FD] p-4">
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">CONTACT</h3>
+                    {parsed.phone && (
+                      <a href={`tel:${parsed.phone.replace(/\s+/g, "")}`} className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-700">
+                        <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {parsed.phone}
+                      </a>
+                    )}
+                    {parsed.email && (
+                      <a href={`mailto:${parsed.email}`} className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-700">
+                        <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {parsed.email}
+                      </a>
+                    )}
+                    {parsed.portfolio && (
+                      <a
+                        href={parsed.portfolio.startsWith("http") ? parsed.portfolio : `https://${parsed.portfolio}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 truncate text-sm font-semibold text-slate-700 hover:text-primary-700"
+                      >
+                        <LinkIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{parsed.portfolio}</span>
+                      </a>
+                    )}
+                  </section>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-[#F1F0FA] p-[22px]">
+                <button
+                  type="button"
+                  onClick={() => setDetailOppId(null)}
+                  className="rounded-xl border border-[#E4E3F2] px-5 py-3 text-sm font-bold text-slate-700 hover:border-primary-300 hover:text-primary-700"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedOpp(detailOpp.id);
+                    setDetailOppId(null);
+                  }}
+                  className="rounded-xl bg-primary-600 px-5 py-3 text-sm font-bold text-white hover:bg-primary-700"
+                >
+                  Apply / Inquire
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

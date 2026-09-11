@@ -1,5 +1,27 @@
 export type ResourceStatus = "PENDING" | "READY" | "ARCHIVED" | "FAILED";
 export type ResourceFileStatus = "PENDING" | "UPLOADED" | "READY" | "FAILED";
+export type ResourceCategory =
+  | "PAST_PAPER"
+  | "NOTES"
+  | "SLIDES"
+  | "ARTICLE"
+  | "EXCEL";
+
+export const RESOURCE_CATEGORIES: ResourceCategory[] = [
+  "PAST_PAPER",
+  "NOTES",
+  "SLIDES",
+  "ARTICLE",
+  "EXCEL",
+];
+
+export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
+  PAST_PAPER: "Past paper",
+  NOTES: "Notes",
+  SLIDES: "Slides",
+  ARTICLE: "Article",
+  EXCEL: "Excel",
+};
 
 export interface Resource {
   id: string;
@@ -10,16 +32,19 @@ export interface Resource {
   subjectId: string | null;
   title: string;
   description: string | null;
+  category: ResourceCategory;
   status: ResourceStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 // The browse-list endpoint carries a bit more than a single-resource
-// fetch: just enough to render a thumbnail without a per-card lookup.
+// fetch: just enough to render a thumbnail without a per-card lookup,
+// plus the uploader's display name for the byline.
 export interface ResourceListItem extends Resource {
   readyFileId: string | null;
   readyFileMimeType: string | null;
+  ownerName: string | null;
 }
 
 export interface ResourceFile {
@@ -54,4 +79,7 @@ export const ALLOWED_RESOURCE_MIME_TYPES = [
   "application/pdf",
   "image/jpeg",
   "image/png",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
 ] as const;

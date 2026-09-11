@@ -57,6 +57,9 @@ const envSchema = z.object({
   STORAGE_ENDPOINT: z.string().optional().default(""),
   STORAGE_ACCESS_KEY_ID: z.string().optional().default(""),
   STORAGE_SECRET_ACCESS_KEY: z.string().optional().default(""),
+  // "auto" works for some S3-compatible providers (e.g. R2); Supabase
+  // Storage expects its actual project region here instead.
+  STORAGE_REGION: z.string().default("auto"),
   // Local-fs adapter only (dev-only storage backend, no cloud account needed).
   STORAGE_LOCAL_ROOT: z.string().default("./storage/resources"),
   STORAGE_SIGNING_SECRET: z
@@ -151,6 +154,7 @@ export const env = {
     provider: raw.STORAGE_PROVIDER,
     bucket: raw.STORAGE_BUCKET,
     endpoint: raw.STORAGE_ENDPOINT,
+    region: raw.STORAGE_REGION,
     accessKeyId: raw.STORAGE_ACCESS_KEY_ID,
     secretAccessKey: raw.STORAGE_SECRET_ACCESS_KEY,
     localRoot: raw.STORAGE_LOCAL_ROOT,

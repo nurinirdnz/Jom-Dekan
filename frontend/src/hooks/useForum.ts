@@ -5,6 +5,8 @@ import type { VoteTargetType } from "../types/forum";
 export function usePosts(
   params: {
     mine?: boolean;
+    unanswered?: boolean;
+    solved?: boolean;
     sortBy?: "newest" | "oldest" | "top";
     page?: number;
     pageSize?: number;
@@ -43,6 +45,15 @@ export function useUpdatePost() {
       postId: string;
       data: { title: string; body: string };
     }) => forumService.updatePost(postId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["forum"] }),
+  });
+}
+
+export function useSetPostSolved() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, solved }: { postId: string; solved: boolean }) =>
+      forumService.setPostSolved(postId, solved),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["forum"] }),
   });
 }

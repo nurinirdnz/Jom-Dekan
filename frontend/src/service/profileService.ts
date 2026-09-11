@@ -1,5 +1,5 @@
 import axiosInstance from '../api/axiosInstance';
-import type { Profile, ProfileStats, UpdateProfileInput } from '../types/profile';
+import type { ActivityItem, Profile, ProfileStats, UpdateProfileInput } from '../types/profile';
 
 export const profileService = {
   getMe: async (): Promise<Profile> => {
@@ -14,6 +14,11 @@ export const profileService = {
 
   getMyStats: async (): Promise<ProfileStats> => {
     const response = await axiosInstance.get<{ data: ProfileStats }>('/users/me/stats');
+    return response.data.data;
+  },
+
+  getMyActivity: async (): Promise<ActivityItem[]> => {
+    const response = await axiosInstance.get<{ data: ActivityItem[] }>('/users/me/activity');
     return response.data.data;
   },
 };

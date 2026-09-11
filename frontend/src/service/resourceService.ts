@@ -1,6 +1,7 @@
 import axiosInstance from "../api/axiosInstance";
 import type {
   Resource,
+  ResourceCategory,
   ResourceFile,
   ResourceComment,
   ResourceListItem,
@@ -30,6 +31,7 @@ function optionalId(value: string | undefined) {
 interface UploadIntentInput {
   title: string;
   description?: string;
+  category: ResourceCategory;
   universityId?: string;
   facultyId?: string;
   programmeId?: string;
@@ -45,12 +47,23 @@ interface UploadIntentResult {
   uploadUrl: string;
 }
 
+interface CreateTextResourceInput {
+  title: string;
+  description: string;
+  category: ResourceCategory;
+  universityId?: string;
+  facultyId?: string;
+  programmeId?: string;
+  subjectId?: string;
+}
+
 interface ListResourcesParams {
   mine?: boolean;
   universityId?: string;
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  category?: ResourceCategory;
   q?: string;
   sortBy?: "newest" | "oldest" | "title";
   page?: number;
@@ -93,6 +106,22 @@ export const resourceService = {
             onProgress(Math.round((event.loaded / event.total) * 100));
           }
         },
+      },
+    );
+    return res.data.data;
+  },
+
+  createTextResource: async (
+    data: CreateTextResourceInput,
+  ): Promise<{ resource: Resource }> => {
+    const res = await axiosInstance.post<{ data: { resource: Resource } }>(
+      "/resources/text",
+      {
+        ...data,
+        universityId: optionalId(data.universityId),
+        facultyId: optionalId(data.facultyId),
+        programmeId: optionalId(data.programmeId),
+        subjectId: optionalId(data.subjectId),
       },
     );
     return res.data.data;

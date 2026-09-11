@@ -9,6 +9,7 @@ import { idParamSchema } from "../validators/taxonomyValidators";
 import { env } from "../config/config/env";
 import {
   createUploadIntentSchema,
+  createTextResourceSchema,
   updateResourceSchema,
   resourceStatusActionSchema,
   listResourcesQuerySchema,
@@ -76,6 +77,23 @@ router.post(
   authenticate,
   validate({ body: createUploadIntentSchema }),
   resourceController.createUploadIntent,
+);
+
+/**
+ * @openapi
+ * /resources/text:
+ *   post:
+ *     tags: [Resources]
+ *     summary: Post a resource with no file — the description is the content, published as READY immediately
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       201: { description: Resource created }
+ */
+router.post(
+  "/text",
+  authenticate,
+  validate({ body: createTextResourceSchema }),
+  resourceController.createTextResource,
 );
 
 /**

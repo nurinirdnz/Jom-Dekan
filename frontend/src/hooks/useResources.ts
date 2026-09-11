@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { resourceService } from "../service/resourceService";
+import type { ResourceCategory } from "../types/resource";
 
 export function useResources(params: {
   mine?: boolean;
@@ -7,6 +8,7 @@ export function useResources(params: {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  category?: ResourceCategory;
   q?: string;
   sortBy?: "newest" | "oldest" | "title";
   page?: number;
@@ -69,14 +71,15 @@ export function useDownloadUrl() {
 }
 
 /**
- * Auto-fetches a signed preview URL for an image file as soon as the
- * page has one to show (used for the inline <img> preview). Separate
- * from useDownloadUrl (a mutation) because the Download button wants a
- * fresh token fetched right when clicked, not one that might have sat
- * around since page load — this one is fine to go a little stale since
- * a failed <img> load just means "no preview", not a broken download.
+ * Auto-fetches a signed preview URL for a file (image or PDF) as soon
+ * as the page has one to show — used for both the inline <img> preview
+ * and the PDF-page-1 thumbnail render. Separate from useDownloadUrl (a
+ * mutation) because the Download button wants a fresh token fetched
+ * right when clicked, not one that might have sat around since page
+ * load — this one is fine to go a little stale since a failed preview
+ * just means "no preview", not a broken download.
  */
-export function useImagePreviewUrl(fileId: string | undefined) {
+export function useFilePreviewUrl(fileId: string | undefined) {
   return useQuery({
     queryKey: ["resources", "preview-url", fileId],
     queryFn: () => resourceService.getDownloadUrl(fileId!),
@@ -150,22 +153,42 @@ export function useDeleteResourceComment() {
 interface UploadResourceInput {
   title: string;
   description?: string;
+  category: ResourceCategory;
   universityId?: string;
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
-  file: File;
+  // Optional: with no file, `description` becomes the resource's actual
+  // content instead of just a caption — see createTextResourceSchema.
+  file?: File;
   onProgress?: (percent: number) => void;
 }
 
-/** Chains upload-intent -> PUT file (with progress) -> confirm, in one mutation. */
+/**
+ * With a file: chains upload-intent -> PUT file (with progress) ->
+ * confirm, in one mutation. With no file: posts straight to the
+ * text-only endpoint, published READY immediately (no pipeline to run).
+ */
 export function useUploadResource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UploadResourceInput) => {
+      if (!input.file) {
+        return resourceService.createTextResource({
+          title: input.title,
+          description: input.description ?? "",
+          category: input.category,
+          universityId: input.universityId,
+          facultyId: input.facultyId,
+          programmeId: input.programmeId,
+          subjectId: input.subjectId,
+        });
+      }
+
       const intent = await resourceService.createUploadIntent({
         title: input.title,
         description: input.description,
+        category: input.category,
         universityId: input.universityId,
         facultyId: input.facultyId,
         programmeId: input.programmeId,

@@ -9,6 +9,9 @@ interface SummaryCardProps {
   // (purple/amber/blue/green) rather than reusing one color everywhere —
   // defaults to the purple pair so existing callers keep working.
   iconClass?: string;
+  // Staggers the reveal animation across a row of cards that all finish
+  // loading on the same tick, instead of everything popping in at once.
+  revealDelayMs?: number;
 }
 
 export function SummaryCard({
@@ -17,6 +20,7 @@ export function SummaryCard({
   value,
   isLoading,
   iconClass = "bg-[#EFEEFB] text-[#4338CA]",
+  revealDelayMs = 0,
 }: SummaryCardProps) {
   return (
     <div
@@ -31,7 +35,12 @@ export function SummaryCard({
         {isLoading ? (
           <div className="mt-1 h-6 w-10 animate-pulse rounded bg-slate-200" aria-hidden="true" />
         ) : (
-          <p className="text-xl font-bold text-slate-900">{value}</p>
+          <p
+            style={{ animationDelay: `${revealDelayMs}ms` }}
+            className="text-xl font-bold text-slate-900 motion-safe:animate-[fadeIn_350ms_ease-out_both]"
+          >
+            {value}
+          </p>
         )}
       </div>
     </div>

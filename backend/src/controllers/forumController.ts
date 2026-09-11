@@ -56,6 +56,17 @@ export const forumController = {
     }
   },
 
+  async setPostSolved(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { postId } = req.params as { postId: string };
+      const { solved } = req.body as { solved: boolean };
+      const data = await forumService.posts.setSolved(postId, solved, ctxFrom(req));
+      res.status(200).json({ message: solved ? "Marked solved." : "Marked unsolved.", data });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async removePost(req: Request, res: Response, next: NextFunction) {
     try {
       const { postId } = req.params as { postId: string };

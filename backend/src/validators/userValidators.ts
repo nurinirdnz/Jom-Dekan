@@ -12,6 +12,13 @@ export const updateProfileSchema = z
       .min(2, 'Display name must be at least 2 characters.')
       .max(120, 'Display name is too long.')
       .optional(),
+    phone: z
+      .string()
+      .trim()
+      .min(5, 'Enter a valid phone number.')
+      .max(30, 'Phone number is too long.')
+      .optional(),
+    email: z.string().trim().toLowerCase().email('Enter a valid email address.').optional(),
     academicRole: z.enum(['STUDENT', 'TUTOR']).optional(),
     universityId: z.string().uuid('Select a valid university.').optional(),
     fieldOfStudy: z.enum(FIELDS_OF_STUDY, {

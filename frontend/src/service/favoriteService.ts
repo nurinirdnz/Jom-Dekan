@@ -1,43 +1,66 @@
 import axiosInstance from "../api/axiosInstance";
 import type {
   Favorite,
-  FavoriteListItem,
+  FavoriteTargetType,
+  FavoriteResourceItem,
+  FavoriteForumPostItem,
+  FavoriteOpportunityItem,
   FavoriteListMeta,
 } from "../types/favorite";
 
 interface ListFavoritesParams {
+  targetType: FavoriteTargetType;
   page?: number;
   pageSize?: number;
 }
 
 export const favoriteService = {
-  add: async (resourceId: string): Promise<Favorite> => {
+  add: async (targetType: FavoriteTargetType, targetId: string): Promise<Favorite> => {
     const res = await axiosInstance.post<{ data: Favorite }>("/favorites", {
-      resourceId,
+      targetType,
+      targetId,
     });
     return res.data.data;
   },
 
-  remove: async (resourceId: string): Promise<void> => {
-    await axiosInstance.delete(`/favorites/${resourceId}`);
+  remove: async (targetType: FavoriteTargetType, targetId: string): Promise<void> => {
+    await axiosInstance.delete(`/favorites/${targetType}/${targetId}`);
   },
 
-  checkStatus: async (resourceId: string): Promise<boolean> => {
+  checkStatus: async (targetType: FavoriteTargetType, targetId: string): Promise<boolean> => {
     const res = await axiosInstance.get<{ data: { isFavorited: boolean } }>(
-      `/favorites/${resourceId}`,
+      `/favorites/${targetType}/${targetId}`,
     );
     return res.data.data.isFavorited;
   },
 
-  list: async (
-    params: ListFavoritesParams,
-  ): Promise<{ data: FavoriteListItem[]; meta: FavoriteListMeta }> => {
-    const res = await axiosInstance.get<{
-      data: FavoriteListItem[];
-      meta: FavoriteListMeta;
-    }>("/favorites", {
-      params,
-    });
+  listResources: async (
+    params: Omit<ListFavoritesParams, "targetType">,
+  ): Promise<{ data: FavoriteResourceItem[]; meta: FavoriteListMeta }> => {
+    const res = await axiosInstance.get<{ data: FavoriteResourceItem[]; meta: FavoriteListMeta }>(
+      "/favorites",
+      { params: { ...params, targetType: "resource" } },
+    );
+    return res.data;
+  },
+
+  listForumPosts: async (
+    params: Omit<ListFavoritesParams, "targetType">,
+  ): Promise<{ data: FavoriteForumPostItem[]; meta: FavoriteListMeta }> => {
+    const res = await axiosInstance.get<{ data: FavoriteForumPostItem[]; meta: FavoriteListMeta }>(
+      "/favorites",
+      { params: { ...params, targetType: "forum_post" } },
+    );
+    return res.data;
+  },
+
+  listOpportunities: async (
+    params: Omit<ListFavoritesParams, "targetType">,
+  ): Promise<{ data: FavoriteOpportunityItem[]; meta: FavoriteListMeta }> => {
+    const res = await axiosInstance.get<{ data: FavoriteOpportunityItem[]; meta: FavoriteListMeta }>(
+      "/favorites",
+      { params: { ...params, targetType: "opportunity" } },
+    );
     return res.data;
   },
 };

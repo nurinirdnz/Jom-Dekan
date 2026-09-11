@@ -127,7 +127,7 @@ class S3StorageAdapter implements StorageAdapter {
 
   constructor() {
     this.client = new S3Client({
-      region: "auto",
+      region: env.storage.region,
       endpoint: env.storage.endpoint || undefined,
       forcePathStyle: Boolean(env.storage.endpoint),
       credentials: {

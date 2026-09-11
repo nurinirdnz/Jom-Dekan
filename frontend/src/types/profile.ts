@@ -6,6 +6,7 @@ export interface Profile {
   termsAcceptedAt: string | null;
   displayName: string;
   photoPath: string | null;
+  phone: string | null;
   academicRole: 'STUDENT' | 'TUTOR';
   university: { id: string; name: string | null } | null;
   fieldOfStudy: string | null;
@@ -21,8 +22,24 @@ export interface ProfileStats {
   forumCommentCount: number;
 }
 
+export type ActivityType =
+  | 'RESOURCE_UPLOADED'
+  | 'FORUM_POST_CREATED'
+  | 'FORUM_COMMENT_CREATED'
+  | 'RESOURCE_FAVORITED';
+
+export interface ActivityItem {
+  id: string;
+  type: ActivityType;
+  title: string;
+  targetId: string;
+  createdAt: string;
+}
+
 export interface UpdateProfileInput {
   displayName?: string;
+  phone?: string;
+  email?: string;
   academicRole?: 'STUDENT' | 'TUTOR';
   universityId?: string;
   fieldOfStudy?: string;

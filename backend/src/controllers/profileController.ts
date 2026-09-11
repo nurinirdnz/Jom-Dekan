@@ -29,4 +29,13 @@ export const profileController = {
       next(err);
     }
   },
+
+  async getMyActivity(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await profileService.getMyActivity(req.user!.id);
+      res.status(200).json({ data });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

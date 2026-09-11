@@ -71,6 +71,8 @@ export const forumService = {
     async list(
       filters: {
         mine?: boolean;
+        unanswered?: boolean;
+        solved?: boolean;
         sortBy: "newest" | "oldest" | "top";
         page: number;
         pageSize: number;
@@ -82,6 +84,8 @@ export const forumService = {
 
       const { rows, total } = await forumModel.posts.list({
         authorId: filters.mine ? ctx.actorUserId : undefined,
+        unanswered: filters.unanswered,
+        solved: filters.solved,
         currentUserId: ctx.actorUserId,
         sortBy: filters.sortBy,
         limit,
@@ -92,6 +96,25 @@ export const forumService = {
         data: rows.map(toApiForumPostListItem),
         meta: { page: filters.page, pageSize: filters.pageSize, total },
       };
+    },
+
+    async setSolved(id: string, solved: boolean, ctx: ActorContext) {
+      const post = await getPostOrThrow(id);
+      // Author-only, deliberately not admin-or-owner — whether a
+      // question is "solved" is the asker's own judgment call, not
+      // something a moderator should be settling on their behalf.
+      if (post.author_id !== ctx.actorUserId) throw AppError.forbidden();
+
+      const updated = await forumModel.posts.setSolved(id, solved);
+      await auditLogModel.record({
+        actorUserId: ctx.actorUserId,
+        action: solved ? "FORUM_POST_SOLVED" : "FORUM_POST_UNSOLVED",
+        targetType: "forum_post",
+        targetId: id,
+        requestId: ctx.requestId,
+        ipAddress: ctx.ipAddress,
+      });
+      return toApiForumPost(updated!);
     },
 
     async update(

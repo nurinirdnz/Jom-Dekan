@@ -1,31 +1,142 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Heart, Search, MessageSquare, Briefcase, GraduationCap } from "lucide-react";
-import { useFavorites, useRemoveFavorite } from "../hooks/useFavorites";
+import { FileText, Heart, Search, MessageSquare, Briefcase, GraduationCap, type LucideIcon } from "lucide-react";
+import {
+  useFavorites,
+  useFavoritedForumPosts,
+  useFavoritedOpportunities,
+  useRemoveFavorite,
+} from "../hooks/useFavorites";
 import { EmptyState } from "../components/common/EmptyState";
 import { ResourceCardSkeleton } from "../components/common/ResourceCardSkeleton";
-import type { FavoriteListItem } from "../types/favorite";
+import type { FavoriteTargetType } from "../types/favorite";
 
-const EMPTY_FAVORITES: FavoriteListItem[] = [];
+type TabKey = "resources" | "discussions" | "tutors" | "opportunities";
 
-const TABS = [
-  { key: "resources", label: "Resources", icon: FileText, available: true },
-  { key: "discussions", label: "Discussions", icon: MessageSquare, available: false },
-  { key: "tutors", label: "Tutors", icon: GraduationCap, available: false },
-  { key: "opportunities", label: "Opportunities", icon: Briefcase, available: false },
-] as const;
+const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
+  { key: "resources", label: "Resources", icon: FileText },
+  { key: "discussions", label: "Discussions", icon: MessageSquare },
+  { key: "tutors", label: "Tutors", icon: GraduationCap },
+  { key: "opportunities", label: "Opportunities", icon: Briefcase },
+];
+
+function SavedItemCard({
+  icon: Icon,
+  title,
+  subtitle,
+  excerpt,
+  savedAt,
+  viewHref,
+  targetType,
+  targetId,
+}: {
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string | null;
+  excerpt?: string | null;
+  savedAt: string;
+  viewHref: string;
+  targetType: FavoriteTargetType;
+  targetId: string;
+}) {
+  const removeFavorite = useRemoveFavorite();
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-[#ECEBF7] bg-white shadow-sm transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md">
+      <Link to={viewHref} className="flex aspect-video w-full items-center justify-center bg-slate-100">
+        <Icon className="h-10 w-10 text-slate-300" aria-hidden="true" />
+      </Link>
+      <div className="flex flex-1 flex-col p-5">
+        <Link to={viewHref} className="font-semibold text-slate-800 transition motion-safe:duration-150 hover:text-primary-700">
+          {title}
+        </Link>
+        {subtitle && <p className="mt-0.5 text-xs font-semibold text-primary-600">{subtitle}</p>}
+        {excerpt && <p className="mt-2 line-clamp-2 text-sm text-slate-500">{excerpt}</p>}
+        <p className="mt-2 text-xs text-slate-400">Saved {new Date(savedAt).toLocaleDateString()}</p>
+        <div className="mt-3 flex items-center gap-2">
+          <Link
+            to={viewHref}
+            className="rounded-full bg-primary-600 px-4 py-1.5 text-xs font-bold text-white transition motion-safe:duration-150 hover:-translate-y-0.5 hover:bg-primary-700"
+          >
+            View
+          </Link>
+          <button
+            type="button"
+            onClick={() => removeFavorite.mutate({ targetType, targetId })}
+            disabled={removeFavorite.isPending}
+            className="flex items-center gap-1 rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-700 transition motion-safe:duration-150 hover:bg-slate-200 disabled:opacity-60"
+          >
+            <Heart className="h-3.5 w-3.5 fill-current text-red-500" aria-hidden="true" />
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <ResourceCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
 
 export default function Favorites() {
-  const { data, isLoading, isError } = useFavorites();
-  const removeFavorite = useRemoveFavorite();
+  const [activeTab, setActiveTab] = useState<TabKey>("resources");
   const [search, setSearch] = useState("");
-  const allFavorites = data?.data ?? EMPTY_FAVORITES;
 
-  const favorites = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return allFavorites;
-    return allFavorites.filter((f) => f.resource.title.toLowerCase().includes(q));
-  }, [allFavorites, search]);
+  const resourcesQuery = useFavorites({ enabled: activeTab === "resources" });
+  const discussionsQuery = useFavoritedForumPosts({ enabled: activeTab === "discussions" });
+  const opportunitiesQuery = useFavoritedOpportunities({
+    enabled: activeTab === "tutors" || activeTab === "opportunities",
+  });
+
+  const q = search.trim().toLowerCase();
+
+  const allResources = useMemo(() => resourcesQuery.data?.data ?? [], [resourcesQuery.data]);
+  const allDiscussions = useMemo(() => discussionsQuery.data?.data ?? [], [discussionsQuery.data]);
+  const allTutors = useMemo(
+    () => (opportunitiesQuery.data?.data ?? []).filter((f) => f.opportunity.listing_type === "TUTORING"),
+    [opportunitiesQuery.data],
+  );
+  const allOpportunities = useMemo(
+    () => (opportunitiesQuery.data?.data ?? []).filter((f) => f.opportunity.listing_type !== "TUTORING"),
+    [opportunitiesQuery.data],
+  );
+
+  const resources = useMemo(
+    () => allResources.filter((f) => !q || f.resource.title.toLowerCase().includes(q)),
+    [allResources, q],
+  );
+  const discussions = useMemo(
+    () => allDiscussions.filter((f) => !q || f.post.title.toLowerCase().includes(q)),
+    [allDiscussions, q],
+  );
+  const tutors = useMemo(
+    () => allTutors.filter((f) => !q || f.opportunity.title.toLowerCase().includes(q)),
+    [allTutors, q],
+  );
+  const opportunities = useMemo(
+    () => allOpportunities.filter((f) => !q || f.opportunity.title.toLowerCase().includes(q)),
+    [allOpportunities, q],
+  );
+
+  const activeQuery = {
+    resources: resourcesQuery,
+    discussions: discussionsQuery,
+    tutors: opportunitiesQuery,
+    opportunities: opportunitiesQuery,
+  }[activeTab];
+  const activeList = { resources, discussions, tutors, opportunities }[activeTab];
+  // Unfiltered count for this tab — decides "nothing saved" vs "no
+  // matches for this search", independent of what's currently typed.
+  const unfilteredCount = { resources: allResources, discussions: allDiscussions, tutors: allTutors, opportunities: allOpportunities }[
+    activeTab
+  ].length;
 
   return (
     <div className="mx-auto max-w-6xl px-[18px] py-[22px]">
@@ -34,30 +145,20 @@ export default function Favorites() {
         Resources, discussions, tutors, and opportunities you've saved for later.
       </p>
 
-      {/* Only "Resources" is backed by real data today — favoriting a
-          discussion, tutor, or opportunity isn't a capability the backend
-          supports yet, so those tabs are shown but disabled rather than
-          faked. */}
       <div className="mt-6 flex flex-wrap gap-2 border-b border-slate-200">
-        {TABS.map(({ key, label, icon: Icon, available }) => (
+        {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
-            disabled={!available}
-            title={available ? undefined : "Coming soon"}
-            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition motion-safe:duration-150 ${
-              available
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-bold transition motion-safe:duration-150 ${
+              activeTab === key
                 ? "border-primary-600 text-primary-700"
-                : "cursor-not-allowed border-transparent text-slate-400"
+                : "border-transparent text-slate-500 hover:text-primary-600"
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
             {label}
-            {!available && (
-              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
-                Soon
-              </span>
-            )}
           </button>
         ))}
       </div>
@@ -75,81 +176,96 @@ export default function Favorites() {
         </div>
       </div>
 
-      <div className="mt-6">
-        {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <ResourceCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : isError ? (
+      <div className="mt-6 motion-safe:animate-[fadeIn_200ms_ease-out]" key={activeTab}>
+        {activeQuery.isLoading ? (
+          <CardGridSkeleton />
+        ) : activeQuery.isError ? (
           <EmptyState
             icon={Heart}
             title="Could not load favorites"
             description="Something went wrong while fetching your favorites. Please try again."
           />
-        ) : allFavorites.length === 0 ? (
+        ) : unfilteredCount === 0 ? (
           <EmptyState
             icon={Heart}
-            title="You haven't saved anything yet"
-            description="Save resources you want to come back to later, and they'll show up here."
-            primaryAction={{ label: "Explore resources", to: "/resources" }}
-            secondaryAction={{ label: "Browse marketplace", to: "/marketplace" }}
+            title="Nothing saved here yet"
+            description={
+              activeTab === "resources"
+                ? "Save resources you want to come back to later, and they'll show up here."
+                : activeTab === "discussions"
+                  ? "Save discussion threads you want to revisit, and they'll show up here."
+                  : activeTab === "tutors"
+                    ? "Save tutor listings you're interested in, and they'll show up here."
+                    : "Save freelance opportunities you're interested in, and they'll show up here."
+            }
+            primaryAction={{
+              label:
+                activeTab === "resources"
+                  ? "Explore resources"
+                  : activeTab === "discussions"
+                    ? "Browse discussions"
+                    : "Browse marketplace",
+              to: activeTab === "resources" ? "/resources" : activeTab === "discussions" ? "/forum" : "/marketplace",
+            }}
           />
-        ) : favorites.length === 0 ? (
-          <EmptyState
-            icon={Search}
-            title="No matching favorites"
-            description="Try a different search term."
-          />
+        ) : activeList.length === 0 ? (
+          <EmptyState icon={Search} title="No matching favorites" description="Try a different search term." />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {favorites.map((f) => (
-              <div
-                key={f.favoriteId}
-                className="flex flex-col overflow-hidden rounded-2xl border border-[#ECEBF7] bg-white shadow-sm transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
-              >
-                <Link
-                  to={`/resources/${f.resource.id}`}
-                  className="flex aspect-video w-full items-center justify-center bg-slate-100"
-                >
-                  <FileText className="h-10 w-10 text-slate-300" aria-hidden="true" />
-                </Link>
-                <div className="flex flex-1 flex-col p-5">
-                  <Link
-                    to={`/resources/${f.resource.id}`}
-                    className="font-semibold text-slate-800 hover:text-primary-700"
-                  >
-                    {f.resource.title}
-                  </Link>
-                  {f.resource.description && (
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
-                      {f.resource.description}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-slate-400">
-                    Saved {new Date(f.favoritedAt).toLocaleDateString()}
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Link
-                      to={`/resources/${f.resource.id}`}
-                      className="rounded-full bg-primary-600 px-4 py-1.5 text-xs font-medium text-white transition motion-safe:duration-150 hover:-translate-y-0.5 hover:bg-primary-700"
-                    >
-                      View
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => removeFavorite.mutate(f.resource.id)}
-                      disabled={removeFavorite.isPending}
-                      className="flex items-center gap-1 rounded-full bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700 transition motion-safe:duration-150 hover:bg-slate-200 disabled:opacity-60"
-                    >
-                      <Heart className="h-3.5 w-3.5 fill-current text-red-500" aria-hidden="true" />
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {activeTab === "resources" &&
+              resources.map((f) => (
+                <SavedItemCard
+                  key={f.favoriteId}
+                  icon={FileText}
+                  title={f.resource.title}
+                  excerpt={f.resource.description}
+                  savedAt={f.favoritedAt}
+                  viewHref={`/resources/${f.resource.id}`}
+                  targetType="resource"
+                  targetId={f.resource.id}
+                />
+              ))}
+            {activeTab === "discussions" &&
+              discussions.map((f) => (
+                <SavedItemCard
+                  key={f.favoriteId}
+                  icon={MessageSquare}
+                  title={f.post.title}
+                  excerpt={f.post.body}
+                  savedAt={f.favoritedAt}
+                  viewHref={`/forum/${f.post.id}`}
+                  targetType="forum_post"
+                  targetId={f.post.id}
+                />
+              ))}
+            {activeTab === "tutors" &&
+              tutors.map((f) => (
+                <SavedItemCard
+                  key={f.favoriteId}
+                  icon={GraduationCap}
+                  title={f.opportunity.title}
+                  subtitle={f.opportunity.subject_name ?? undefined}
+                  excerpt={f.opportunity.description}
+                  savedAt={f.favoritedAt}
+                  viewHref="/marketplace?type=TUTORING"
+                  targetType="opportunity"
+                  targetId={f.opportunity.id}
+                />
+              ))}
+            {activeTab === "opportunities" &&
+              opportunities.map((f) => (
+                <SavedItemCard
+                  key={f.favoriteId}
+                  icon={Briefcase}
+                  title={f.opportunity.title}
+                  subtitle={f.opportunity.subject_name ?? undefined}
+                  excerpt={f.opportunity.description}
+                  savedAt={f.favoritedAt}
+                  viewHref="/marketplace"
+                  targetType="opportunity"
+                  targetId={f.opportunity.id}
+                />
+              ))}
           </div>
         )}
       </div>
