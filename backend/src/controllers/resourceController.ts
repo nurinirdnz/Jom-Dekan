@@ -27,6 +27,15 @@ export const resourceController = {
     }
   },
 
+  async createTextResource(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await resourceService.createTextResource(req.body, ctxFrom(req));
+      res.status(201).json({ message: 'Resource posted.', data });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async receiveUpload(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.storageToken) {

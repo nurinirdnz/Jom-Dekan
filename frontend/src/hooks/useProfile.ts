@@ -21,6 +21,15 @@ export function useMyStats() {
   });
 }
 
+export function useMyActivity() {
+  const currentUser = useCurrentUser();
+  return useQuery({
+    queryKey: ['profile', 'me', 'activity'],
+    queryFn: profileService.getMyActivity,
+    enabled: Boolean(currentUser),
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({

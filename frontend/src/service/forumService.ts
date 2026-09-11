@@ -10,6 +10,8 @@ import type {
 
 interface ListPostsParams {
   mine?: boolean;
+  unanswered?: boolean;
+  solved?: boolean;
   sortBy?: "newest" | "oldest" | "top";
   page?: number;
   pageSize?: number;
@@ -59,6 +61,14 @@ export const forumService = {
 
   removePost: async (postId: string): Promise<void> => {
     await axiosInstance.delete(`/forum/posts/${postId}`);
+  },
+
+  setPostSolved: async (postId: string, solved: boolean): Promise<ForumPost> => {
+    const res = await axiosInstance.patch<{ data: ForumPost }>(
+      `/forum/posts/${postId}/solved`,
+      { solved },
+    );
+    return res.data.data;
   },
 
   createComment: async (

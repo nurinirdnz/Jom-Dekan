@@ -4,7 +4,7 @@ import { validate } from "../config/middleware/validateMiddleware";
 import { authenticate } from "../config/middleware/authMiddleware";
 import {
   addFavoriteSchema,
-  resourceIdParamSchema,
+  targetParamSchema,
   listFavoritesQuerySchema,
 } from "../validators/favoriteValidators";
 
@@ -15,17 +15,17 @@ const router = Router();
  * /favorites:
  *   get:
  *     tags: [Favorites]
- *     summary: List the current user's favorited resources
+ *     summary: List the current user's favorites for one target type (resource, forum_post, or opportunity)
  *     security: [{ bearerAuth: [] }]
  *     responses:
- *       200: { description: List of favorited resources }
+ *       200: { description: List of favorites }
  *   post:
  *     tags: [Favorites]
- *     summary: Favorite a resource (idempotent)
+ *     summary: Favorite a resource, forum post, or opportunity (idempotent)
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200: { description: Favorited }
- *       404: { description: Resource not found or not visible }
+ *       404: { description: Target not found or not visible }
  */
 router.get(
   "/",
@@ -42,30 +42,30 @@ router.post(
 
 /**
  * @openapi
- * /favorites/{resourceId}:
+ * /favorites/{targetType}/{targetId}:
  *   get:
  *     tags: [Favorites]
- *     summary: Check whether the current user has favorited a resource
+ *     summary: Check whether the current user has favorited this target
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200: { description: Favorite status }
  *   delete:
  *     tags: [Favorites]
- *     summary: Unfavorite a resource (idempotent)
+ *     summary: Unfavorite this target (idempotent)
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200: { description: Unfavorited }
  */
 router.get(
-  "/:resourceId",
+  "/:targetType/:targetId",
   authenticate,
-  validate({ params: resourceIdParamSchema }),
+  validate({ params: targetParamSchema }),
   favoriteController.checkStatus,
 );
 router.delete(
-  "/:resourceId",
+  "/:targetType/:targetId",
   authenticate,
-  validate({ params: resourceIdParamSchema }),
+  validate({ params: targetParamSchema }),
   favoriteController.remove,
 );
 

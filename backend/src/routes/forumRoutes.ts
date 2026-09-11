@@ -12,6 +12,7 @@ import {
   castVoteSchema,
   removeVoteSchema,
   listPostsQuerySchema,
+  setSolvedSchema,
 } from "../validators/forumValidators";
 
 const router = Router();
@@ -86,6 +87,24 @@ router.delete(
   authenticate,
   validate({ params: postIdParamSchema }),
   forumController.removePost,
+);
+
+/**
+ * @openapi
+ * /forum/posts/{postId}/solved:
+ *   patch:
+ *     tags: [Forum]
+ *     summary: Mark a thread solved or unsolved (author only, not even ADMIN)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Solved state updated }
+ *       403: { description: Not the thread's author }
+ */
+router.patch(
+  "/posts/:postId/solved",
+  authenticate,
+  validate({ params: postIdParamSchema, body: setSolvedSchema }),
+  forumController.setPostSolved,
 );
 
 /**

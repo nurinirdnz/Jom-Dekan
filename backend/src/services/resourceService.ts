@@ -4,10 +4,12 @@ import {
   toApiResource,
   toApiResourceFile,
   toApiResourceListItem,
+  type ResourceCategory,
   type ResourceRow,
   type ResourceSortBy,
 } from "../models/resourceModel";
 import { auditLogModel } from "../models/auditLogModel";
+import { favoriteModel } from "../models/favoriteModel";
 import { getStorageAdapter } from "../config/config/storage";
 import { detectFileType, isAllowedMimeType } from "../utils/fileSniffer";
 import {
@@ -120,6 +122,7 @@ export const resourceService = {
     input: {
       title: string;
       description?: string;
+      category: ResourceCategory;
       universityId?: string;
       facultyId?: string;
       programmeId?: string;
@@ -132,7 +135,7 @@ export const resourceService = {
   ) {
     if (!isAllowedMimeType(input.contentType)) {
       throw AppError.badRequest(
-        "Unsupported file type. Allowed: PDF, JPEG, PNG.",
+        "Unsupported file type. Allowed: PDF, JPEG, PNG, DOCX, XLSX, PPTX.",
       );
     }
     if (input.sizeBytes > env.resources.maxFileSizeBytes) {
@@ -147,6 +150,7 @@ export const resourceService = {
       ownerId: ctx.actorUserId,
       title: input.title,
       description: input.description ?? null,
+      category: input.category,
       universityId: input.universityId ?? null,
       facultyId: input.facultyId ?? null,
       programmeId: input.programmeId ?? null,
@@ -184,6 +188,59 @@ export const resourceService = {
   },
 
   /**
+   * A resource with no file at all — the description text IS the
+   * content. Skips the whole upload/scan pipeline entirely (there are
+   * no bytes to scan) and goes straight to READY, unlike the file path
+   * above where READY is only reached after confirmUpload's scan-stub.
+   */
+  async createTextResource(
+    input: {
+      title: string;
+      description: string;
+      category: ResourceCategory;
+      universityId?: string;
+      facultyId?: string;
+      programmeId?: string;
+      subjectId?: string;
+    },
+    ctx: ActorContext,
+  ) {
+    await validateTaxonomy(input);
+
+    const resource = await resourceModel.create({
+      ownerId: ctx.actorUserId,
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      universityId: input.universityId ?? null,
+      facultyId: input.facultyId ?? null,
+      programmeId: input.programmeId ?? null,
+      subjectId: input.subjectId ?? null,
+    });
+
+    const readyResource = await resourceModel.setStatus(resource.id, "READY");
+
+    await auditLogModel.record({
+      actorUserId: ctx.actorUserId,
+      action: "RESOURCE_CREATED",
+      targetType: "resource",
+      targetId: resource.id,
+      requestId: ctx.requestId,
+      ipAddress: ctx.ipAddress,
+    });
+    await auditLogModel.record({
+      actorUserId: ctx.actorUserId,
+      action: "RESOURCE_READY",
+      targetType: "resource",
+      targetId: resource.id,
+      requestId: ctx.requestId,
+      ipAddress: ctx.ipAddress,
+    });
+
+    return { resource: toApiResource(readyResource!) };
+  },
+
+  /**
    * Handles the token-gated PUT — receives the raw file buffer already
    * validated for size by multer's `limits.fileSize`. Order matters:
    * detect the real type from bytes BEFORE writing anything to disk,
@@ -195,7 +252,7 @@ export const resourceService = {
     const detected = detectFileType(buffer);
     if (!detected) {
       throw AppError.badRequest(
-        "The uploaded file does not match any supported file type (PDF, JPEG, PNG).",
+        "The uploaded file does not match any supported file type (PDF, JPEG, PNG, DOCX, XLSX, PPTX).",
       );
     }
 
@@ -291,6 +348,7 @@ export const resourceService = {
       facultyId?: string;
       programmeId?: string;
       subjectId?: string;
+      category?: ResourceCategory;
       q?: string;
       sortBy: ResourceSortBy;
       page: number;
@@ -308,6 +366,7 @@ export const resourceService = {
       facultyId: filters.facultyId,
       programmeId: filters.programmeId,
       subjectId: filters.subjectId,
+      category: filters.category,
       q: filters.q,
       sortBy: filters.sortBy,
       limit,
@@ -401,6 +460,10 @@ export const resourceService = {
     await Promise.all(
       files.map((file) => getStorageAdapter().deleteObject(file.storage_key)),
     );
+    // No DB-level cascade for this anymore (favorites.target_id carries
+    // no FK — see migration 014), so it's cleaned up explicitly here,
+    // same best-effort spirit as the storage file cleanup above.
+    await favoriteModel.removeAllForTarget("resource", id);
 
     await auditLogModel.record({
       actorUserId: ctx.actorUserId,

@@ -8,6 +8,7 @@ export interface ProfileRow {
   terms_accepted_at: Date | null;
   display_name: string;
   photo_path: string | null;
+  phone: string | null;
   academic_role: 'STUDENT' | 'TUTOR';
   university_id: string | null;
   university_name: string | null;
@@ -24,10 +25,28 @@ export interface ProfileStats {
   forum_comment_count: number;
 }
 
+export type ActivityType =
+  | 'RESOURCE_UPLOADED'
+  | 'FORUM_POST_CREATED'
+  | 'FORUM_COMMENT_CREATED'
+  | 'RESOURCE_FAVORITED';
+
+export interface ActivityRow {
+  id: string;
+  type: ActivityType;
+  title: string;
+  // The id to actually navigate to — same as `id` for uploads/posts, but
+  // different for comments (the parent post, since a comment has no page
+  // of its own) and favorites (the favorited resource, not the favorite
+  // row itself).
+  target_id: string;
+  created_at: Date;
+}
+
 const PROFILE_SELECT = `
   SELECT
     u.id AS user_id, u.email, u.role, u.email_verified_at, u.terms_accepted_at,
-    p.display_name, p.photo_path, p.academic_role,
+    p.display_name, p.photo_path, p.phone, p.academic_role,
     p.university_id, uni.name AS university_name,
     p.field_of_study, p.study_level, p.current_year, p.current_semester, u.created_at
   FROM users u
@@ -51,6 +70,7 @@ export const profileModel = {
     userId: string,
     fields: Partial<{
       displayName: string;
+      phone: string;
       academicRole: 'STUDENT' | 'TUTOR';
       universityId: string;
       fieldOfStudy: string;
@@ -60,6 +80,7 @@ export const profileModel = {
   ): Promise<ProfileRow | null> {
     const columns: Record<string, string> = {
       displayName: 'display_name',
+      phone: 'phone',
       academicRole: 'academic_role',
       universityId: 'university_id',
       fieldOfStudy: 'field_of_study',
@@ -86,6 +107,38 @@ export const profileModel = {
     return this.findByUserId(userId);
   },
 
+  /**
+   * The user's own recent actions — real rows from the tables that
+   * already track them (resources, forum_posts, forum_comments,
+   * favorites), not a separate activity/notifications log that nothing
+   * currently writes to for a user's own actions.
+   */
+  async getRecentActivity(userId: string, limit: number): Promise<ActivityRow[]> {
+    const result = await pool.query<ActivityRow>(
+      `(SELECT id, 'RESOURCE_UPLOADED' AS type, title, id AS target_id, created_at
+        FROM resources
+        WHERE owner_id = $1)
+       UNION ALL
+       (SELECT id, 'FORUM_POST_CREATED' AS type, title, id AS target_id, created_at
+        FROM forum_posts
+        WHERE author_id = $1 AND deleted_at IS NULL)
+       UNION ALL
+       (SELECT c.id, 'FORUM_COMMENT_CREATED' AS type, p.title, p.id AS target_id, c.created_at
+        FROM forum_comments c
+        JOIN forum_posts p ON p.id = c.post_id
+        WHERE c.author_id = $1 AND c.deleted_at IS NULL)
+       UNION ALL
+       (SELECT f.id, 'RESOURCE_FAVORITED' AS type, r.title, r.id AS target_id, f.created_at
+        FROM favorites f
+        JOIN resources r ON r.id = f.target_id
+        WHERE f.user_id = $1 AND f.target_type = 'resource')
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userId, limit],
+    );
+    return result.rows;
+  },
+
   async getStats(userId: string): Promise<ProfileStats> {
     const result = await pool.query<ProfileStats>(
       `SELECT
@@ -107,12 +160,23 @@ export function toApiProfile(row: ProfileRow) {
     termsAcceptedAt: row.terms_accepted_at,
     displayName: row.display_name,
     photoPath: row.photo_path,
+    phone: row.phone,
     academicRole: row.academic_role,
     university: row.university_id ? { id: row.university_id, name: row.university_name } : null,
     fieldOfStudy: row.field_of_study,
     studyLevel: row.study_level,
     currentYear: row.current_year,
     currentSemester: row.current_semester,
+    createdAt: row.created_at,
+  };
+}
+
+export function toApiActivity(row: ActivityRow) {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    targetId: row.target_id,
     createdAt: row.created_at,
   };
 }

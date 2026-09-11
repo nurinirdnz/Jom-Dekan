@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import axios from "axios";
-import { Briefcase, Plus, X, Check } from "lucide-react";
+import { Briefcase, Plus, X, Check, Phone, Mail, Link as LinkIcon } from "lucide-react";
 import { useOpportunities } from "../../hooks/useOpportunities";
 import { EmptyState } from "../common/EmptyState";
+import { FavoriteButton } from "../common/FavoriteButton";
+import { ReportButton } from "../common/ReportButton";
 import { MarketplaceCardSkeleton } from "./MarketplaceCardSkeleton";
 import type { Opportunity, OpportunityMode } from "../../types/opportunity";
 
@@ -112,17 +114,53 @@ function buildDescription(f: PostForm, skills: string[]) {
     .join("\n");
 }
 
-function parseListing(description: string) {
-  const get = (label: string) => {
-    const m = description.match(new RegExp(`^${label}:\\s*(.+)$`, "m"));
-    return m ? m[1].trim() : null;
-  };
-  return {
-    org: get("Organisation/client"),
-    budget: get("Budget"),
-    closes: get("Applications close"),
-    skills: get("Skills needed")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [],
-  };
+interface ParsedListing {
+  org?: string;
+  budget?: string;
+  paymentType?: string;
+  closes?: string;
+  skills: string[];
+  phone?: string;
+  email?: string;
+  brief?: string;
+  scope?: string;
+}
+
+function parseListing(description: string): ParsedListing {
+  const result: ParsedListing = { skills: [] };
+  const scopeLines: string[] = [];
+  let inScope = false;
+
+  for (const raw of description.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      if (result.org !== undefined || result.budget !== undefined || result.brief !== undefined) inScope = true;
+      continue;
+    }
+    if (!inScope) {
+      const match = line.match(/^(Organisation\/client|Budget|Payment type|Applications close|Skills needed|Contact|Brief\/website):\s*(.*)$/);
+      if (match) {
+        const [, key, value] = match;
+        if (key === "Organisation/client") result.org = value;
+        else if (key === "Budget") result.budget = value;
+        else if (key === "Payment type") result.paymentType = value;
+        else if (key === "Applications close") result.closes = value;
+        else if (key === "Skills needed") result.skills = value.split(",").map((s) => s.trim()).filter(Boolean);
+        else if (key === "Brief/website") result.brief = value;
+        else if (key === "Contact") {
+          const [phone, email] = value.split("·").map((s) => s.trim());
+          result.phone = phone;
+          result.email = email;
+        }
+        continue;
+      }
+    }
+    inScope = true;
+    scopeLines.push(line);
+  }
+
+  if (scopeLines.length) result.scope = scopeLines.join("\n").trim();
+  return result;
 }
 
 export function FreelanceView() {
@@ -151,6 +189,8 @@ export function FreelanceView() {
 
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [coverMessage, setCoverMessage] = useState("");
+  const [detailOppId, setDetailOppId] = useState<string | null>(null);
+  const detailOpp = gigs.find((g) => g.id === detailOppId) ?? null;
 
   function updateForm<K extends keyof PostForm>(key: K, value: PostForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -314,7 +354,16 @@ export function FreelanceView() {
             return (
               <article
                 key={opp.id}
-                className="flex flex-wrap items-center gap-4 rounded-[20px] border border-[#ECEBF7] bg-white p-[18px] transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetailOppId(opp.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setDetailOppId(opp.id);
+                  }
+                }}
+                className="flex cursor-pointer flex-wrap items-center gap-4 rounded-[20px] border border-[#ECEBF7] bg-white p-[18px] text-left transition motion-safe:duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               >
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[16px] font-bold text-slate-900">{opp.title}</h3>
@@ -334,10 +383,15 @@ export function FreelanceView() {
                   {!parsed.budget && <p className="mt-2 line-clamp-2 text-sm text-slate-600">{opp.description}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
-                  {parsed.budget && <span className="text-lg font-extrabold text-[#2E2372]">RM {parsed.budget}</span>}
+                  {parsed.budget && <span className="text-lg font-extrabold text-[#2E2372]">{parsed.budget}</span>}
+                  <FavoriteButton targetType="opportunity" targetId={opp.id} />
+                  <ReportButton targetType="opportunity" targetId={opp.id} />
                   <button
                     type="button"
-                    onClick={() => setSelectedOpp(opp.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOpp(opp.id);
+                    }}
                     className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white transition motion-safe:duration-150 hover:-translate-y-0.5 hover:bg-primary-700"
                   >
                     Apply
@@ -584,6 +638,140 @@ export function FreelanceView() {
           </div>
         </div>
       )}
+
+      {/* Listing detail view — opened by clicking a card. Shows the real
+          contact info the poster submitted (currently buried in the
+          description text and shown nowhere else), so a student can
+          actually reach them directly, plus a way into the existing
+          apply flow. */}
+      {detailOpp && (() => {
+        const parsed = parseListing(detailOpp.description);
+        return (
+          <div role="dialog" aria-modal="true" aria-label="Listing details" className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 py-8">
+            <div className="w-full max-w-[560px] overflow-hidden rounded-[24px] bg-white shadow-2xl">
+              <div
+                className="flex items-start justify-between gap-4 p-[22px] text-white"
+                style={{ background: "radial-gradient(120% 160% at 88% 8%, #4A3FD1 0%, #2E2372 55%, #231C57 100%)" }}
+              >
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-extrabold">{detailOpp.title}</h2>
+                  <p className="mt-1 truncate text-sm font-medium text-[#C6C2EC]">
+                    {parsed.org || detailOpp.owner_name || "A JomDekan student"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailOppId(null)}
+                  aria-label="Close"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white hover:bg-white/20"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto p-[22px]">
+                <div className="flex flex-wrap gap-4">
+                  {parsed.budget && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Budget</p>
+                      <p className="text-sm font-extrabold text-slate-900">{parsed.budget}</p>
+                    </div>
+                  )}
+                  {parsed.paymentType && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Payment type</p>
+                      <p className="text-sm font-bold text-slate-700">{parsed.paymentType}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mode</p>
+                    <p className="text-sm font-bold text-slate-700">{MODE_LABEL[detailOpp.mode]}</p>
+                  </div>
+                  {parsed.closes && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Applications close</p>
+                      <p className="text-sm font-bold text-slate-700">{parsed.closes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {parsed.skills.length > 0 && (
+                  <section>
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">SKILLS NEEDED</h3>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {parsed.skills.map((s) => (
+                        <span key={s} className="rounded-full bg-[#F1F0FA] px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {parsed.scope && (
+                  <section>
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">SCOPE OF WORK</h3>
+                    <p className="mt-1.5 whitespace-pre-line text-sm text-slate-600">{parsed.scope}</p>
+                  </section>
+                )}
+
+                {!parsed.org && !parsed.budget && (
+                  <p className="whitespace-pre-line text-sm text-slate-600">{detailOpp.description}</p>
+                )}
+
+                {(parsed.phone || parsed.email || parsed.brief) && (
+                  <section className="flex flex-col gap-2 rounded-xl bg-[#F8F8FD] p-4">
+                    <h3 className="text-xs font-bold tracking-wide text-primary-700">CONTACT</h3>
+                    {parsed.phone && (
+                      <a href={`tel:${parsed.phone.replace(/\s+/g, "")}`} className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-700">
+                        <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {parsed.phone}
+                      </a>
+                    )}
+                    {parsed.email && (
+                      <a href={`mailto:${parsed.email}`} className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-700">
+                        <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {parsed.email}
+                      </a>
+                    )}
+                    {parsed.brief && (
+                      <a
+                        href={parsed.brief.startsWith("http") ? parsed.brief : `https://${parsed.brief}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 truncate text-sm font-semibold text-slate-700 hover:text-primary-700"
+                      >
+                        <LinkIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{parsed.brief}</span>
+                      </a>
+                    )}
+                  </section>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-[#F1F0FA] p-[22px]">
+                <button
+                  type="button"
+                  onClick={() => setDetailOppId(null)}
+                  className="rounded-xl border border-[#E4E3F2] px-5 py-3 text-sm font-bold text-slate-700 hover:border-primary-300 hover:text-primary-700"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedOpp(detailOpp.id);
+                    setDetailOppId(null);
+                  }}
+                  className="rounded-xl bg-primary-600 px-5 py-3 text-sm font-bold text-white hover:bg-primary-700"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

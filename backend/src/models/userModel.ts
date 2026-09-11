@@ -86,6 +86,20 @@ export const userModel = {
     await pool.query(`UPDATE users SET email_verified_at = now() WHERE id = $1`, [id]);
   },
 
+  /**
+   * Resets email_verified_at to NULL — the new address hasn't been
+   * confirmed yet. The caller (profileService) is responsible for
+   * sending a fresh verification email via authService.sendVerificationEmail,
+   * reusing the exact same token/email flow issued at registration.
+   */
+  async updateEmail(id: string, email: string): Promise<UserRow> {
+    const result = await pool.query<UserRow>(
+      `UPDATE users SET email = $2, email_verified_at = NULL WHERE id = $1 RETURNING *`,
+      [id, email.trim().toLowerCase()],
+    );
+    return result.rows[0];
+  },
+
   async setRole(id: string, role: 'USER' | 'ADMIN'): Promise<UserRow | null> {
     const result = await pool.query<UserRow>(
       `UPDATE users SET role = $2 WHERE id = $1 RETURNING *`,

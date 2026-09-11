@@ -8,7 +8,7 @@ import {
   useSetResourceStatus,
   useDeleteResource,
   useDownloadUrl,
-  useImagePreviewUrl,
+  useFilePreviewUrl,
   useResourceComments,
   useCreateResourceComment,
   useUpdateResourceComment,
@@ -16,6 +16,7 @@ import {
 } from "../hooks/useResources";
 import { useCurrentUser } from "../hooks/useAuth";
 import { FavoriteButton } from "../components/common/FavoriteButton";
+import { PdfThumbnail } from "../components/common/PdfThumbnail";
 
 import {
   editResourceFormSchema,
@@ -52,11 +53,12 @@ export default function ResourceDetail() {
 
   const readyFile = data?.files.find((f) => f.status === "READY");
   const isImage = readyFile?.detectedMimeType?.startsWith("image/") ?? false;
+  const isPdf = readyFile?.detectedMimeType === "application/pdf";
   // Hooks must run unconditionally on every render (before the early
   // returns below), so this is fetched here even though it's only
   // rendered further down once `data` is confirmed present.
-  const { data: previewUrl } = useImagePreviewUrl(
-    isImage ? readyFile?.id : undefined,
+  const { data: previewUrl } = useFilePreviewUrl(
+    isImage || isPdf ? readyFile?.id : undefined,
   );
 
   if (isLoading)
@@ -228,8 +230,14 @@ export default function ResourceDetail() {
               />
             )}
 
+            {isPdf && previewUrl && (
+              <div className="mt-4 flex max-h-96 w-full items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                <PdfThumbnail url={previewUrl} className="max-h-96 w-full object-contain" />
+              </div>
+            )}
+
             <div className="mt-6 flex flex-wrap gap-2">
-              <FavoriteButton resourceId={resource.id} />
+              <FavoriteButton targetType="resource" targetId={resource.id} variant="pill" />
               {readyFile && (
                 <button
                   type="button"

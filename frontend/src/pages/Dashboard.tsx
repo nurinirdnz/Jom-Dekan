@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { BookOpen, Heart, MessageSquare, Bell } from "lucide-react";
 import { useCurrentUser } from "../hooks/useAuth";
+import { useMyProfile } from "../hooks/useProfile";
 import { useResources } from "../hooks/useResources";
 import { useFavorites } from "../hooks/useFavorites";
 import { usePosts } from "../hooks/useForum";
@@ -11,12 +12,12 @@ import { SummaryCard } from "../components/dashboard/SummaryCard";
 import { RecommendedResources } from "../components/dashboard/RecommendedResources";
 import { QuickActions } from "../components/dashboard/QuickActions";
 import { RecentActivity } from "../components/dashboard/RecentActivity";
-import { UpcomingSessions } from "../components/dashboard/UpcomingSessions";
 import { AdminAnalyticsPanel } from "./admin/AdminAnalytics";
 import { AdminDashboardPanel } from "../components/dashboard/AdminDashboardPanel";
 
 export default function Dashboard() {
   const user = useCurrentUser();
+  const { data: profile } = useMyProfile();
   // Simulated ~2s reveal for this frontend demo, kept separate from the
   // real react-query isLoading flags below (OR'd in, never replacing them).
   const isDemoLoading = useDemoLoading();
@@ -29,7 +30,7 @@ export default function Dashboard() {
     (n: Notification) => !n.read_at,
   ).length;
 
-  const firstName = user?.email ? user.email.split("@")[0] : "";
+  const firstName = profile?.displayName ? profile.displayName.trim().split(/\s+/)[0] : "";
   const greeting =
     new Date().getHours() < 12
       ? "Good morning"
@@ -85,7 +86,7 @@ export default function Dashboard() {
                   <div className="mt-2 h-4 w-56 animate-pulse rounded bg-white/10 sm:w-72" />
                 </>
               ) : (
-                <>
+                <div className="motion-safe:animate-[fadeIn_400ms_ease-out]">
                   <h1 className="truncate text-xl font-bold text-white sm:text-2xl">
                     {greeting}
                     {firstName ? `, ${firstName}` : ""}!
@@ -93,13 +94,16 @@ export default function Dashboard() {
                   <p className="mt-1 text-sm text-[#C6C2EC]">
                     Here&apos;s what&apos;s happening with your studies today.
                   </p>
-                </>
+                </div>
               )}
             </div>
           </div>
 
           {!isDemoLoading && user && (
-            <div className="flex flex-wrap items-center gap-3">
+            <div
+              className="flex flex-wrap items-center gap-3 motion-safe:animate-[fadeIn_400ms_ease-out]"
+              style={{ animationDelay: "80ms" }}
+            >
               <Link
                 to="/resources"
                 className="rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#231C57] transition motion-safe:duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
@@ -128,6 +132,7 @@ export default function Dashboard() {
           value={myResources.data?.meta.total ?? 0}
           isLoading={isDemoLoading || myResources.isLoading}
           iconClass="bg-[#EFEEFB] text-[#4338CA]"
+          revealDelayMs={0}
         />
         <SummaryCard
           icon={Heart}
@@ -135,6 +140,7 @@ export default function Dashboard() {
           value={favorites.data?.meta.total ?? 0}
           isLoading={isDemoLoading || favorites.isLoading}
           iconClass="bg-[#FDF3DA] text-[#8A6A00]"
+          revealDelayMs={60}
         />
         <SummaryCard
           icon={MessageSquare}
@@ -142,6 +148,7 @@ export default function Dashboard() {
           value={myPosts.data?.meta.total ?? 0}
           isLoading={isDemoLoading || myPosts.isLoading}
           iconClass="bg-[#E4F1FB] text-[#1D5E8A]"
+          revealDelayMs={120}
         />
         <SummaryCard
           icon={Bell}
@@ -149,22 +156,18 @@ export default function Dashboard() {
           value={unreadCount}
           isLoading={isDemoLoading || isLoadingNotifications}
           iconClass="bg-[#EAF3EA] text-[#2A6B3F]"
+          revealDelayMs={180}
         />
       </div>
 
       <>
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="flex flex-col gap-6 xl:col-span-2">
-            <RecommendedResources forceLoading={isDemoLoading} />
-            <RecentActivity forceLoading={isDemoLoading} />
-          </div>
-          <div className="flex flex-col gap-6">
-            <UpcomingSessions />
-          </div>
+        <div className="mt-6 flex flex-col gap-6">
+          <RecommendedResources forceLoading={isDemoLoading} />
+          <RecentActivity forceLoading={isDemoLoading} />
         </div>
 
         <div className="mt-6">
-          <QuickActions />
+          <QuickActions forceLoading={isDemoLoading} />
         </div>
       </>
     </div>

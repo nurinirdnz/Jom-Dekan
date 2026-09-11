@@ -48,7 +48,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-dvh-with-fallback flex w-full flex-col overflow-hidden bg-[#F6F6FB]">
+    <div className="h-dvh-with-fallback flex w-full flex-col overflow-hidden bg-[#F6F6FB] transition-colors motion-safe:duration-200 dark:bg-[#15132B]">
       <DashboardHeader onMenuClick={handleMenuClick} />
 
       {/* `min-h-0` overrides Flexbox's default `min-height: auto` on this

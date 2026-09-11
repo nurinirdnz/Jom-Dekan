@@ -11,6 +11,7 @@ import {
   UserCog,
   LogOut,
   X,
+  GraduationCap,
 } from "lucide-react";
 import { useCurrentUser, useLogout } from "../../hooks/useAuth";
 import { useModeration } from "../../hooks/useModeration";
@@ -51,24 +52,48 @@ function NavRows({
   collapsed: boolean;
   items: typeof links;
 }) {
+  const location = useLocation();
+  const onMarketplace = location.pathname === "/marketplace";
+  const marketplaceType = new URLSearchParams(location.search).get("type");
+
   return (
     <>
-      {items.map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          onClick={onClose}
-          title={collapsed ? label : undefined}
-          className={({ isActive }) => rowClass(isActive, collapsed)}
-        >
-          <Icon
-            className="h-[19px] w-[19px] shrink-0 transition motion-safe:duration-150"
-            aria-hidden="true"
-          />
-          {!collapsed && label}
-        </NavLink>
-      ))}
+      {items.map(({ to, label, icon: Icon, end }) => {
+        // "Tutoring" and "Freelance Opportunities" both route to
+        // /marketplace, distinguished only by a ?type= query string that
+        // NavLink's own isActive match ignores (it only compares
+        // pathname), so both would otherwise light up together. Mirror
+        // Marketplace.tsx's own type === "TUTORING" check instead.
+        const [toPath, toQuery] = to.split("?");
+        const marketplaceActive =
+          toPath === "/marketplace"
+            ? onMarketplace &&
+              (toQuery === "type=TUTORING"
+                ? marketplaceType === "TUTORING"
+                : marketplaceType !== "TUTORING")
+            : null;
+
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={onClose}
+            title={collapsed ? label : undefined}
+            className={
+              marketplaceActive !== null
+                ? rowClass(marketplaceActive, collapsed)
+                : ({ isActive }) => rowClass(isActive, collapsed)
+            }
+          >
+            <Icon
+              className="h-[19px] w-[19px] shrink-0 transition motion-safe:duration-150"
+              aria-hidden="true"
+            />
+            {!collapsed && label}
+          </NavLink>
+        );
+      })}
     </>
   );
 }
@@ -152,8 +177,8 @@ export function DashboardSidebar({
         <div
           className={`flex items-center gap-3 py-[22px] ${collapsed ? "justify-center px-2" : "px-5"}`}
         >
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#F5C21A] text-[19px] font-extrabold text-[#231C57]">
-            J
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#F5C21A] text-[#231C57]">
+            <GraduationCap className="h-5 w-5" aria-hidden="true" />
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
@@ -250,8 +275,8 @@ export function DashboardSidebar({
           <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-gradient-to-b from-[#2A2166] to-[#211A52] shadow-xl motion-safe:transition-transform motion-safe:duration-200">
             <div className="flex items-center justify-between border-b border-white/10 py-3 pl-4 pr-2">
               <div className="flex items-center gap-2 text-white">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F5C21A] text-sm font-extrabold text-[#231C57]">
-                  J
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F5C21A] text-[#231C57]">
+                  <GraduationCap className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <span className="font-semibold">JomDekan</span>
               </div>

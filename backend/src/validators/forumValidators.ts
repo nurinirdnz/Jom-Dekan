@@ -46,14 +46,20 @@ export const removeVoteSchema = z
   })
   .strict();
 
+const optionalBooleanFlag = z
+  .enum(["true", "false"])
+  .optional()
+  .transform((v) => (v === undefined ? undefined : v === "true"));
+
 export const listPostsQuerySchema = z
   .object({
-    mine: z
-      .enum(["true", "false"])
-      .optional()
-      .transform((v) => v === "true"),
+    mine: optionalBooleanFlag,
+    unanswered: optionalBooleanFlag,
+    solved: optionalBooleanFlag,
     sortBy: z.enum(["newest", "oldest", "top"]).optional().default("newest"),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20),
   })
   .strict();
+
+export const setSolvedSchema = z.object({ solved: z.boolean() }).strict();

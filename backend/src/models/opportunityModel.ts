@@ -77,4 +77,9 @@ export class OpportunityModel {
     const result = await pool.query(query, [status, id]);
     return result.rows[0];
   }
+
+  static async findById(id: string) {
+    const result = await pool.query(`SELECT * FROM opportunities WHERE id = $1`, [id]);
+    return result.rows[0] ?? null;
+  }
 }

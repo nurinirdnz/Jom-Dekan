@@ -38,4 +38,16 @@ router.patch('/me', authenticate, validate({ body: updateProfileSchema }), profi
  */
 router.get('/me/stats', authenticate, profileController.getMyStats);
 
+/**
+ * @openapi
+ * /users/me/activity:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get the current user's recent activity (uploads, forum posts/comments, favorites)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Recent activity feed }
+ */
+router.get('/me/activity', authenticate, profileController.getMyActivity);
+
 export default router;

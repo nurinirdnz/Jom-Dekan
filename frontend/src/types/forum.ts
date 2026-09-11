@@ -3,6 +3,7 @@ export interface ForumPost {
   authorId: string;
   title: string;
   body: string;
+  solvedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

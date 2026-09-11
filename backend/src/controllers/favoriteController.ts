@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { favoriteService } from "../services/favoriteService";
+import type { FavoriteTargetType } from "../models/favoriteModel";
 
 function ctxFrom(req: Request) {
   return {
@@ -13,8 +14,11 @@ function ctxFrom(req: Request) {
 export const favoriteController = {
   async add(req: Request, res: Response, next: NextFunction) {
     try {
-      const { resourceId } = req.body as { resourceId: string };
-      const data = await favoriteService.add(resourceId, ctxFrom(req));
+      const { targetType, targetId } = req.body as {
+        targetType: FavoriteTargetType;
+        targetId: string;
+      };
+      const data = await favoriteService.add(targetType, targetId, ctxFrom(req));
       res.status(200).json({ message: "Added to favorites.", data });
     } catch (err) {
       next(err);
@@ -23,8 +27,11 @@ export const favoriteController = {
 
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      const { resourceId } = req.params as { resourceId: string };
-      await favoriteService.remove(resourceId, ctxFrom(req));
+      const { targetType, targetId } = req.params as {
+        targetType: FavoriteTargetType;
+        targetId: string;
+      };
+      await favoriteService.remove(targetType, targetId, ctxFrom(req));
       res.status(200).json({ message: "Removed from favorites." });
     } catch (err) {
       next(err);
@@ -33,8 +40,11 @@ export const favoriteController = {
 
   async checkStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { resourceId } = req.params as { resourceId: string };
-      const data = await favoriteService.isFavorited(resourceId, ctxFrom(req));
+      const { targetType, targetId } = req.params as {
+        targetType: FavoriteTargetType;
+        targetId: string;
+      };
+      const data = await favoriteService.isFavorited(targetType, targetId, ctxFrom(req));
       res.status(200).json({ data });
     } catch (err) {
       next(err);

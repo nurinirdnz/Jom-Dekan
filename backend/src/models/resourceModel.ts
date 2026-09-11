@@ -1,5 +1,12 @@
 import { pool } from "../config/config/db";
 
+export type ResourceCategory =
+  | "PAST_PAPER"
+  | "NOTES"
+  | "SLIDES"
+  | "ARTICLE"
+  | "EXCEL";
+
 export interface ResourceRow {
   id: string;
   owner_id: string;
@@ -9,6 +16,7 @@ export interface ResourceRow {
   subject_id: string | null;
   title: string;
   description: string | null;
+  category: ResourceCategory;
   status: "PENDING" | "READY" | "ARCHIVED" | "FAILED";
   created_at: Date;
   updated_at: Date;
@@ -31,6 +39,7 @@ export interface ResourceFileRow {
 export interface ResourceListRow extends ResourceRow {
   ready_file_id: string | null;
   ready_file_mime_type: string | null;
+  owner_name: string | null;
 }
 
 export type ResourceSortBy = "newest" | "oldest" | "title";
@@ -43,6 +52,7 @@ export interface ListResourcesFilters {
   facultyId?: string;
   programmeId?: string;
   subjectId?: string;
+  category?: ResourceCategory;
   q?: string;
   sortBy: ResourceSortBy;
   limit: number;
@@ -65,19 +75,21 @@ export const resourceModel = {
     ownerId: string;
     title: string;
     description: string | null;
+    category: ResourceCategory;
     universityId: string | null;
     facultyId: string | null;
     programmeId: string | null;
     subjectId: string | null;
   }): Promise<ResourceRow> {
     const result = await pool.query<ResourceRow>(
-      `INSERT INTO resources (owner_id, title, description, university_id, faculty_id, programme_id, subject_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO resources (owner_id, title, description, category, university_id, faculty_id, programme_id, subject_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         params.ownerId,
         params.title,
         params.description,
+        params.category,
         params.universityId,
         params.facultyId,
         params.programmeId,
@@ -176,6 +188,7 @@ export const resourceModel = {
     if (filters.programmeId)
       addCondition("programme_id = ?", filters.programmeId);
     if (filters.subjectId) addCondition("subject_id = ?", filters.subjectId);
+    if (filters.category) addCondition("category = ?", filters.category);
 
     let searchParamIndex: number | null = null;
     if (filters.q) {
@@ -207,7 +220,8 @@ export const resourceModel = {
 
     const dataValues = [...values, filters.limit, filters.offset];
     const rowsResult = await pool.query<ResourceListRow>(
-      `SELECT r.*, rf.id AS ready_file_id, rf.detected_mime_type AS ready_file_mime_type
+      `SELECT r.*, rf.id AS ready_file_id, rf.detected_mime_type AS ready_file_mime_type,
+              up.display_name AS owner_name
        FROM resources r
        LEFT JOIN LATERAL (
          SELECT id, detected_mime_type FROM resource_files
@@ -215,6 +229,7 @@ export const resourceModel = {
          ORDER BY created_at ASC
          LIMIT 1
        ) rf ON true
+       LEFT JOIN user_profiles up ON up.user_id = r.owner_id
        ${whereClause}
        ORDER BY ${orderParts.join(", ")}
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
@@ -321,6 +336,7 @@ export function toApiResource(row: ResourceRow) {
     subjectId: row.subject_id,
     title: row.title,
     description: row.description,
+    category: row.category,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -330,12 +346,14 @@ export function toApiResource(row: ResourceRow) {
 // List rows carry a bit more than a single-resource fetch: just enough
 // (a file id + its detected mime type — never the storage key) for the
 // browse page to show an image thumbnail without an extra round trip
-// per card to look up "does this resource have a ready image file".
+// per card to look up "does this resource have a ready image file",
+// plus the uploader's display name for the byline.
 export function toApiResourceListItem(row: ResourceListRow) {
   return {
     ...toApiResource(row),
     readyFileId: row.ready_file_id,
     readyFileMimeType: row.ready_file_mime_type,
+    ownerName: row.owner_name,
   };
 }
 

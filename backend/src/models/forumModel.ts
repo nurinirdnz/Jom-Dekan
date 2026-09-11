@@ -6,6 +6,7 @@ export interface ForumPostRow {
   title: string;
   body: string;
   deleted_at: Date | null;
+  solved_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -45,6 +46,8 @@ export interface VoteRow {
 
 export interface ListPostsFilters {
   authorId?: string;
+  unanswered?: boolean;
+  solved?: boolean;
   currentUserId: string;
   sortBy: "newest" | "oldest" | "top";
   limit: number;
@@ -115,6 +118,14 @@ export const forumModel = {
       return result.rows[0] ?? null;
     },
 
+    async setSolved(id: string, solved: boolean): Promise<ForumPostRow | null> {
+      const result = await pool.query<ForumPostRow>(
+        `UPDATE forum_posts SET solved_at = ${solved ? "now()" : "NULL"} WHERE id = $1 RETURNING *`,
+        [id],
+      );
+      return result.rows[0] ?? null;
+    },
+
     async softDelete(id: string): Promise<boolean> {
       const result = await pool.query(
         `UPDATE forum_posts SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`,
@@ -135,6 +146,13 @@ export const forumModel = {
       }
 
       if (filters.authorId) addCondition("p.author_id = ?", filters.authorId);
+      if (filters.unanswered) {
+        conditions.push(
+          "NOT EXISTS (SELECT 1 FROM forum_comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL)",
+        );
+      }
+      if (filters.solved === true) conditions.push("p.solved_at IS NOT NULL");
+      if (filters.solved === false) conditions.push("p.solved_at IS NULL");
 
       const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
@@ -263,6 +281,7 @@ export function toApiForumPost(row: ForumPostRow) {
     authorId: row.author_id,
     title: row.title,
     body: row.body,
+    solvedAt: row.solved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

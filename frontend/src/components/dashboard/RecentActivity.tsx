@@ -1,11 +1,60 @@
-import { Bell } from "lucide-react";
-import { useModeration } from "../../hooks/useModeration";
-import type { Notification } from "../../types/moderation";
+import { Link } from "react-router-dom";
+import { UploadCloud, MessageSquare, Reply, Heart, type LucideIcon } from "lucide-react";
+import { useMyActivity } from "../../hooks/useProfile";
+import type { ActivityItem, ActivityType } from "../../types/profile";
+
+// Same 4-color palette already used for the dashboard's summary cards —
+// keeps each activity type visually distinct instead of one flat purple.
+const ACTIVITY_STYLE: Record<ActivityType, { icon: LucideIcon; iconClass: string; hoverClass: string; textHoverClass: string }> = {
+  RESOURCE_UPLOADED: {
+    icon: UploadCloud,
+    iconClass: "bg-[#EFEEFB] text-[#4338CA]",
+    hoverClass: "hover:bg-[#EFEEFB]/60",
+    textHoverClass: "group-hover:text-[#4338CA]",
+  },
+  RESOURCE_FAVORITED: {
+    icon: Heart,
+    iconClass: "bg-[#FDF3DA] text-[#8A6A00]",
+    hoverClass: "hover:bg-[#FDF3DA]/60",
+    textHoverClass: "group-hover:text-[#8A6A00]",
+  },
+  FORUM_POST_CREATED: {
+    icon: MessageSquare,
+    iconClass: "bg-[#E4F1FB] text-[#1D5E8A]",
+    hoverClass: "hover:bg-[#E4F1FB]/60",
+    textHoverClass: "group-hover:text-[#1D5E8A]",
+  },
+  FORUM_COMMENT_CREATED: {
+    icon: Reply,
+    iconClass: "bg-[#EAF3EA] text-[#2A6B3F]",
+    hoverClass: "hover:bg-[#EAF3EA]/60",
+    textHoverClass: "group-hover:text-[#2A6B3F]",
+  },
+};
+
+function activityHref(item: ActivityItem): string {
+  return item.type === "FORUM_POST_CREATED" || item.type === "FORUM_COMMENT_CREATED"
+    ? `/forum/${item.targetId}`
+    : `/resources/${item.targetId}`;
+}
+
+function activityLabel(item: ActivityItem): string {
+  switch (item.type) {
+    case "RESOURCE_UPLOADED":
+      return `You uploaded "${item.title}"`;
+    case "FORUM_POST_CREATED":
+      return `You posted "${item.title}"`;
+    case "FORUM_COMMENT_CREATED":
+      return `You replied on "${item.title}"`;
+    case "RESOURCE_FAVORITED":
+      return `You favorited "${item.title}"`;
+  }
+}
 
 export function RecentActivity({ forceLoading = false }: { forceLoading?: boolean }) {
-  const { notifications, isLoadingNotifications } = useModeration();
-  const recent = notifications.slice(0, 5);
-  const showSkeleton = forceLoading || isLoadingNotifications;
+  const { data, isLoading } = useMyActivity();
+  const recent = data ?? [];
+  const showSkeleton = forceLoading || isLoading;
 
   return (
     <div className="rounded-[22px] border border-[#ECEBF7] bg-white p-5 shadow-sm" aria-busy={showSkeleton}>
@@ -22,26 +71,40 @@ export function RecentActivity({ forceLoading = false }: { forceLoading?: boolea
           Nothing new yet — activity on your posts, favorites, and uploads will show up here.
         </p>
       ) : (
-        <ul className="mt-4 flex flex-col divide-y divide-slate-100">
-          {recent.map((n: Notification) => (
-            <li key={n.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-              <Bell
-                className={`mt-0.5 h-4 w-4 shrink-0 ${n.read_at ? "text-slate-300" : "text-primary-600"}`}
-                aria-hidden="true"
-              />
-              <div className="min-w-0">
-                <p className={`text-sm ${n.read_at ? "text-slate-500" : "font-medium text-slate-800"}`}>
-                  {n.payload?.message || n.type}
-                </p>
-                <span className="text-xs text-slate-400">
-                  {new Date(n.created_at).toLocaleString([], {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </span>
-              </div>
-            </li>
-          ))}
+        <ul className="mt-4 flex flex-col gap-1.5">
+          {recent.map((item, i) => {
+            const style = ACTIVITY_STYLE[item.type];
+            const Icon = style.icon;
+            return (
+              <li
+                key={`${item.type}-${item.id}`}
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="motion-safe:animate-[fadeIn_350ms_ease-out_both]"
+              >
+                <Link
+                  to={activityHref(item)}
+                  className={`group flex items-start gap-3 rounded-xl p-2.5 transition motion-safe:duration-150 hover:translate-x-0.5 hover:shadow-sm ${style.hoverClass}`}
+                >
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition motion-safe:duration-150 group-hover:scale-105 ${style.iconClass}`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className={`truncate text-sm font-medium text-slate-800 transition motion-safe:duration-150 ${style.textHoverClass}`}>
+                      {activityLabel(item)}
+                    </p>
+                    <span className="text-xs text-slate-400">
+                      {new Date(item.createdAt).toLocaleString([], {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
