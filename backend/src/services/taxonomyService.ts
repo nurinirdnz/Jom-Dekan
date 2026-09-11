@@ -295,6 +295,13 @@ export const taxonomyService = {
       return rows.map(toApiSubject);
     },
 
+    async listByProgramme(programmeId: string) {
+      const programme = await taxonomyModel.programmes.findById(programmeId);
+      if (!programme) throw AppError.badRequest("Programme not found.");
+      const rows = await taxonomyModel.subjects.listByProgramme(programmeId);
+      return rows.map(toApiSubject);
+    },
+
     async create(input: { code: string; name: string }, ctx: ActorContext) {
       let row;
       try {
@@ -346,6 +353,64 @@ export const taxonomyService = {
         ipAddress: ctx.ipAddress,
       });
       return toApiSubject(row);
+    },
+  },
+
+  programmeSubjects: {
+    async link(
+      input: {
+        programmeId: string;
+        subjectId: string;
+        curriculumYear?: number;
+        recommendedYear?: number;
+        recommendedSemester?: number;
+      },
+      ctx: ActorContext,
+    ) {
+      const programme = await taxonomyModel.programmes.findById(
+        input.programmeId,
+      );
+      if (!programme) throw AppError.badRequest("Programme not found.");
+      const subject = await taxonomyModel.subjects.findById(input.subjectId);
+      if (!subject) throw AppError.badRequest("Subject not found.");
+
+      await taxonomyModel.programmeSubjects.link(input);
+      await auditLogModel.record({
+        actorUserId: ctx.actorUserId,
+        action: "TAXONOMY_PROGRAMME_SUBJECT_LINKED",
+        targetType: "programme",
+        targetId: input.programmeId,
+        metadata: { subjectId: input.subjectId },
+        requestId: ctx.requestId,
+        ipAddress: ctx.ipAddress,
+      });
+      const rows = await taxonomyModel.subjects.listByProgramme(
+        input.programmeId,
+      );
+      return rows.map(toApiSubject);
+    },
+
+    async unlink(
+      programmeId: string,
+      subjectId: string,
+      ctx: ActorContext,
+    ) {
+      const removed = await taxonomyModel.programmeSubjects.unlink(
+        programmeId,
+        subjectId,
+      );
+      if (!removed) throw AppError.notFound("That subject isn't linked to this programme.");
+      await auditLogModel.record({
+        actorUserId: ctx.actorUserId,
+        action: "TAXONOMY_PROGRAMME_SUBJECT_UNLINKED",
+        targetType: "programme",
+        targetId: programmeId,
+        metadata: { subjectId },
+        requestId: ctx.requestId,
+        ipAddress: ctx.ipAddress,
+      });
+      const rows = await taxonomyModel.subjects.listByProgramme(programmeId);
+      return rows.map(toApiSubject);
     },
   },
 };

@@ -168,9 +168,12 @@ export const taxonomyController = {
   },
 
   // ---- Subjects ----
-  async listSubjects(_req: Request, res: Response, next: NextFunction) {
+  async listSubjects(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await taxonomyService.subjects.list();
+      const { programmeId } = req.query as { programmeId?: string };
+      const data = programmeId
+        ? await taxonomyService.subjects.listByProgramme(programmeId)
+        : await taxonomyService.subjects.list();
       res.status(200).json({ data });
     } catch (err) {
       next(err);
@@ -213,6 +216,42 @@ export const taxonomyController = {
         message: isActive ? "Subject restored." : "Subject archived.",
         data,
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ---- Programme <-> Subject links ----
+  async linkProgrammeSubject(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id: programmeId } = req.params as { id: string };
+      const data = await taxonomyService.programmeSubjects.link(
+        { programmeId, ...req.body },
+        ctxFrom(req),
+      );
+      res.status(201).json({ message: "Subject linked to programme.", data });
+    } catch (err) {
+      next(err);
+    }
+  },
+  async unlinkProgrammeSubject(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { id: programmeId, subjectId } = req.params as {
+        id: string;
+        subjectId: string;
+      };
+      const data = await taxonomyService.programmeSubjects.unlink(
+        programmeId,
+        subjectId,
+        ctxFrom(req),
+      );
+      res
+        .status(200)
+        .json({ message: "Subject unlinked from programme.", data });
     } catch (err) {
       next(err);
     }

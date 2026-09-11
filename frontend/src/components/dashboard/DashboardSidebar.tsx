@@ -45,13 +45,15 @@ interface DashboardSidebarProps {
 function NavRows({
   onClose,
   collapsed,
+  items,
 }: {
   onClose: () => void;
   collapsed: boolean;
+  items: typeof links;
 }) {
   return (
     <>
-      {links.map(({ to, label, icon: Icon, end }) => (
+      {items.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -119,6 +121,7 @@ export function DashboardSidebar({
   const user = useCurrentUser();
   const logout = useLogout();
   const location = useLocation();
+  const isAdmin = user?.role === "ADMIN";
 
   // Prevent the page behind the drawer from scrolling while it's open.
   useEffect(() => {
@@ -158,7 +161,7 @@ export function DashboardSidebar({
                 JomDekan
               </span>
               <span className="text-[11px] font-semibold tracking-wider text-[#A6A0D8]">
-                STUDENT PORTAL
+                {isAdmin ? "ADMIN PORTAL" : "STUDENT PORTAL"}
               </span>
             </div>
           )}
@@ -168,23 +171,31 @@ export function DashboardSidebar({
           <nav
             className={`flex flex-col gap-1 py-3 text-sm ${collapsed ? "px-2" : "px-3"}`}
           >
-            <NavRows onClose={onClose} collapsed={collapsed} />
-            <NotificationsNavLink collapsed={collapsed} onClose={onClose} />
-            <NavLink
-              to="/profile"
-              onClick={onClose}
-              title={collapsed ? "Profile & Settings" : undefined}
-              className={rowClass(isProfileActive, collapsed)}
-            >
-              <UserCog
-                className="h-[19px] w-[19px] shrink-0"
-                aria-hidden="true"
-              />
-              {!collapsed && "Profile & Settings"}
-            </NavLink>
-            {user?.role === "ADMIN" && (
+            <NavRows
+              onClose={onClose}
+              collapsed={collapsed}
+              items={isAdmin ? links.filter((l) => l.to === "/dashboard") : links}
+            />
+            {!isAdmin && (
+              <>
+                <NotificationsNavLink collapsed={collapsed} onClose={onClose} />
+                <NavLink
+                  to="/profile"
+                  onClick={onClose}
+                  title={collapsed ? "Profile & Settings" : undefined}
+                  className={rowClass(isProfileActive, collapsed)}
+                >
+                  <UserCog
+                    className="h-[19px] w-[19px] shrink-0"
+                    aria-hidden="true"
+                  />
+                  {!collapsed && "Profile & Settings"}
+                </NavLink>
+              </>
+            )}
+            {isAdmin && (
               <NavLink
-                to="/admin/universities"
+                to="/admin"
                 onClick={onClose}
                 title={collapsed ? "Admin panel" : undefined}
                 className={({ isActive }) =>
@@ -255,22 +266,30 @@ export function DashboardSidebar({
             </div>
             <div className="flex-1 overflow-y-auto">
               <nav className="flex flex-col gap-1 p-3 text-sm">
-                <NavRows onClose={onClose} collapsed={false} />
-                <NotificationsNavLink collapsed={false} onClose={onClose} />
-                <NavLink
-                  to="/profile"
-                  onClick={onClose}
-                  className={rowClass(isProfileActive, false)}
-                >
-                  <UserCog
-                    className="h-[19px] w-[19px] shrink-0"
-                    aria-hidden="true"
-                  />
-                  Profile & Settings
-                </NavLink>
-                {user?.role === "ADMIN" && (
+                <NavRows
+                  onClose={onClose}
+                  collapsed={false}
+                  items={isAdmin ? links.filter((l) => l.to === "/dashboard") : links}
+                />
+                {!isAdmin && (
+                  <>
+                    <NotificationsNavLink collapsed={false} onClose={onClose} />
+                    <NavLink
+                      to="/profile"
+                      onClick={onClose}
+                      className={rowClass(isProfileActive, false)}
+                    >
+                      <UserCog
+                        className="h-[19px] w-[19px] shrink-0"
+                        aria-hidden="true"
+                      />
+                      Profile & Settings
+                    </NavLink>
+                  </>
+                )}
+                {isAdmin && (
                   <NavLink
-                    to="/admin/universities"
+                    to="/admin"
                     onClick={onClose}
                     className={({ isActive }) =>
                       `mt-2 flex items-center gap-3 rounded-xl border-t border-white/10 px-3 py-2.5 pt-4 text-[14.5px] font-semibold transition motion-safe:duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${

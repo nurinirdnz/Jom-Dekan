@@ -22,12 +22,12 @@ export default function UploadResource() {
   const { data: profile } = useMyProfile();
   const [progress, setProgress] = useState(0);
   const { data: universities } = useUniversities();
-  const { data: subjects } = useSubjects();
   const [universityId, setUniversityId] = useState("");
   const [facultyId, setFacultyId] = useState("");
   const [programmeId, setProgrammeId] = useState("");
   const { data: faculties } = useFaculties(universityId || undefined);
   const { data: programmes } = useProgrammes(facultyId || undefined);
+  const { data: subjects } = useSubjects(programmeId || undefined);
 
   const {
     register,
@@ -139,6 +139,7 @@ export default function UploadResource() {
                 setProgrammeId("");
                 setValue("facultyId", "");
                 setValue("programmeId", "");
+                setValue("subjectId", "");
               }}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
             >
@@ -167,6 +168,7 @@ export default function UploadResource() {
                 setFacultyId(event.target.value);
                 setProgrammeId("");
                 setValue("programmeId", "");
+                setValue("subjectId", "");
               }}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
             >
@@ -191,7 +193,10 @@ export default function UploadResource() {
               id="programmeId"
               value={programmeId}
               disabled={!facultyId}
-              onChange={(event) => setProgrammeId(event.target.value)}
+              onChange={(event) => {
+                setProgrammeId(event.target.value);
+                setValue("subjectId", "");
+              }}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
             >
               <option value="">Select programme</option>
@@ -213,10 +218,13 @@ export default function UploadResource() {
             </label>
             <select
               id="subjectId"
+              disabled={!programmeId}
               {...register("subjectId")}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
             >
-              <option value="">Select subject</option>
+              <option value="">
+                {programmeId ? "Select subject" : "Select a programme first"}
+              </option>
               {subjects
                 ?.filter((item) => item.isActive)
                 .map((item) => (
@@ -225,6 +233,11 @@ export default function UploadResource() {
                   </option>
                 ))}
             </select>
+            {programmeId && subjects && subjects.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500">
+                No subjects are linked to this programme yet.
+              </p>
+            )}
           </div>
         </div>
 

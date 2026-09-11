@@ -24,10 +24,13 @@ export function useProgrammes(facultyId: string | undefined) {
   });
 }
 
-export function useSubjects() {
+// Pass a programmeId to scope the list to subjects linked to that
+// programme (e.g. Upload Resource); omit it for the full catalogue (e.g.
+// the admin Subjects page).
+export function useSubjects(programmeId?: string) {
   return useQuery({
-    queryKey: ["subjects"],
-    queryFn: taxonomyService.listSubjects,
+    queryKey: ["subjects", programmeId ?? "all"],
+    queryFn: () => taxonomyService.listSubjects(programmeId),
   });
 }
 
@@ -154,6 +157,41 @@ export function useSetSubjectStatus() {
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       taxonomyService.setSubjectStatus(id, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subjects"] }),
+  });
+}
+
+// ---- Programme <-> Subject links ----
+export function useLinkSubjectToProgramme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      programmeId,
+      subjectId,
+      curriculumYear,
+    }: {
+      programmeId: string;
+      subjectId: string;
+      curriculumYear?: number;
+    }) =>
+      taxonomyService.linkSubjectToProgramme(programmeId, {
+        subjectId,
+        curriculumYear,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subjects"] }),
+  });
+}
+
+export function useUnlinkSubjectFromProgramme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      programmeId,
+      subjectId,
+    }: {
+      programmeId: string;
+      subjectId: string;
+    }) => taxonomyService.unlinkSubjectFromProgramme(programmeId, subjectId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subjects"] }),
   });
 }

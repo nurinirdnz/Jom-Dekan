@@ -200,6 +200,16 @@ export const taxonomyModel = {
       );
       return result.rows;
     },
+    async listByProgramme(programmeId: string): Promise<SubjectRow[]> {
+      const result = await pool.query<SubjectRow>(
+        `SELECT DISTINCT s.* FROM subjects s
+         JOIN programme_subjects ps ON ps.subject_id = s.id
+         WHERE ps.programme_id = $1
+         ORDER BY s.is_active DESC, s.name ASC`,
+        [programmeId],
+      );
+      return result.rows;
+    },
     async create(params: { code: string; name: string }): Promise<SubjectRow> {
       const result = await pool.query<SubjectRow>(
         `INSERT INTO subjects (code, name) VALUES ($1, $2) RETURNING *`,
@@ -223,6 +233,41 @@ export const taxonomyModel = {
         [id, isActive],
       );
       return result.rows[0] ?? null;
+    },
+  },
+
+  programmeSubjects: {
+    // curriculum_year is part of the table's primary key (so it can't be
+    // NULL); default to the current year when the caller doesn't care to
+    // track separate curriculum revisions.
+    async link(params: {
+      programmeId: string;
+      subjectId: string;
+      curriculumYear?: number;
+      recommendedYear?: number;
+      recommendedSemester?: number;
+    }): Promise<boolean> {
+      const result = await pool.query(
+        `INSERT INTO programme_subjects
+           (programme_id, subject_id, curriculum_year, recommended_year, recommended_semester)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (programme_id, subject_id, curriculum_year) DO NOTHING`,
+        [
+          params.programmeId,
+          params.subjectId,
+          params.curriculumYear ?? new Date().getFullYear(),
+          params.recommendedYear ?? null,
+          params.recommendedSemester ?? null,
+        ],
+      );
+      return (result.rowCount ?? 0) > 0;
+    },
+    async unlink(programmeId: string, subjectId: string): Promise<boolean> {
+      const result = await pool.query(
+        `DELETE FROM programme_subjects WHERE programme_id = $1 AND subject_id = $2`,
+        [programmeId, subjectId],
+      );
+      return (result.rowCount ?? 0) > 0;
     },
   },
 };

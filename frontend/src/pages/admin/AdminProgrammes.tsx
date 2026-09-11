@@ -10,6 +10,9 @@ import {
   useProgrammes,
   useCreateProgramme,
   useSetProgrammeStatus,
+  useSubjects,
+  useLinkSubjectToProgramme,
+  useUnlinkSubjectFromProgramme,
 } from "../../hooks/useTaxonomy";
 
 const programmeCreateSchema = z.object({
@@ -35,6 +38,13 @@ export default function AdminProgrammes({
   } = useProgrammes(facultyId || undefined);
   const createProgramme = useCreateProgramme();
   const setStatus = useSetProgrammeStatus();
+
+  const [manageProgrammeId, setManageProgrammeId] = useState("");
+  const { data: allSubjects } = useSubjects();
+  const { data: linkedSubjects } = useSubjects(manageProgrammeId || undefined);
+  const linkSubject = useLinkSubjectToProgramme();
+  const unlinkSubject = useUnlinkSubjectFromProgramme();
+  const [subjectToLink, setSubjectToLink] = useState("");
 
   const {
     register,
@@ -222,6 +232,19 @@ export default function AdminProgrammes({
                         <button
                           type="button"
                           onClick={() =>
+                            setManageProgrammeId(
+                              manageProgrammeId === p.id ? "" : p.id,
+                            )
+                          }
+                          className="mr-3 text-sm font-medium text-primary-700 hover:underline"
+                        >
+                          {manageProgrammeId === p.id
+                            ? "Hide subjects"
+                            : "Subjects"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
                             setStatus.mutate({
                               id: p.id,
                               isActive: !p.isActive,
@@ -243,6 +266,95 @@ export default function AdminProgrammes({
               </p>
             )}
           </div>
+
+          {manageProgrammeId && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="font-semibold text-slate-800">
+                Subjects for{" "}
+                {programmes?.find((p) => p.id === manageProgrammeId)?.name}
+              </h3>
+              <p className="mt-0.5 text-sm text-slate-500">
+                These are the subjects offered to the subject picker on
+                Upload Resource once this programme is selected.
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <div>
+                  <label
+                    htmlFor="subjectToLink"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Add a subject
+                  </label>
+                  <select
+                    id="subjectToLink"
+                    value={subjectToLink}
+                    onChange={(e) => setSubjectToLink(e.target.value)}
+                    className="mt-1 w-64 rounded-lg border border-slate-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Select a subject…</option>
+                    {allSubjects
+                      ?.filter(
+                        (s) => !linkedSubjects?.some((ls) => ls.id === s.id),
+                      )
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.code} · {s.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  disabled={!subjectToLink || linkSubject.isPending}
+                  onClick={() =>
+                    linkSubject.mutate(
+                      { programmeId: manageProgrammeId, subjectId: subjectToLink },
+                      { onSuccess: () => setSubjectToLink("") },
+                    )
+                  }
+                  className="rounded-full bg-primary-600 px-5 py-2.5 font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+                >
+                  {linkSubject.isPending ? "Adding…" : "Link subject"}
+                </button>
+              </div>
+
+              <ul className="mt-4 flex flex-col gap-2">
+                {linkedSubjects && linkedSubjects.length > 0 ? (
+                  linkedSubjects.map((s) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      <span>
+                        <span className="font-medium text-slate-800">
+                          {s.code}
+                        </span>{" "}
+                        <span className="text-slate-600">{s.name}</span>
+                      </span>
+                      <button
+                        type="button"
+                        disabled={unlinkSubject.isPending}
+                        onClick={() =>
+                          unlinkSubject.mutate({
+                            programmeId: manageProgrammeId,
+                            subjectId: s.id,
+                          })
+                        }
+                        className="text-sm font-medium text-red-600 hover:underline disabled:opacity-60"
+                      >
+                        Unlink
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-slate-500">
+                    No subjects linked to this programme yet.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </>
       )}
     </AdminPageShell>
