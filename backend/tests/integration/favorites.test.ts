@@ -108,7 +108,7 @@ describe("Favorites API", () => {
       .set("Authorization", `Bearer ${userToken}`)
       .send({ targetType: "resource", targetId: resourceId });
     expect(addRes.status).toBe(200);
-    expect(addRes.body.data.resourceId).toBe(resourceId);
+    expect(addRes.body.data.targetId).toBe(resourceId);
 
     const statusRes = await request(app)
       .get(`/api/v1/favorites/resource/${resourceId}`)
@@ -143,7 +143,7 @@ describe("Favorites API", () => {
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
-    expect(second.body.data.resourceId).toBe(resourceId);
+    expect(second.body.data.targetId).toBe(resourceId);
   });
 
   it("never creates more than one row when the same favorite is requested concurrently (double-click / replay)", async () => {
@@ -167,7 +167,7 @@ describe("Favorites API", () => {
     expect(resB.status).toBe(200);
 
     const countRes = await pool.query(
-      "SELECT COUNT(*) FROM favorites WHERE resource_id = $1",
+      "SELECT COUNT(*) FROM favorites WHERE target_type = 'resource' AND target_id = $1",
       [resourceId],
     );
     // The UNIQUE(user_id, resource_id) constraint from migration 005 is
