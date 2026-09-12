@@ -106,12 +106,12 @@ describe("Favorites API", () => {
     const addRes = await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId });
+      .send({ targetType: "resource", targetId: resourceId });
     expect(addRes.status).toBe(200);
     expect(addRes.body.data.resourceId).toBe(resourceId);
 
     const statusRes = await request(app)
-      .get(`/api/v1/favorites/${resourceId}`)
+      .get(`/api/v1/favorites/resource/${resourceId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(statusRes.status).toBe(200);
     expect(statusRes.body.data.isFavorited).toBe(true);
@@ -122,7 +122,7 @@ describe("Favorites API", () => {
     const resourceId = await createReadyResource(ownerToken);
 
     const statusRes = await request(app)
-      .get(`/api/v1/favorites/${resourceId}`)
+      .get(`/api/v1/favorites/resource/${resourceId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(statusRes.status).toBe(200);
     expect(statusRes.body.data.isFavorited).toBe(false);
@@ -135,11 +135,11 @@ describe("Favorites API", () => {
     const first = await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId });
+      .send({ targetType: "resource", targetId: resourceId });
     const second = await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId });
+      .send({ targetType: "resource", targetId: resourceId });
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
@@ -156,11 +156,11 @@ describe("Favorites API", () => {
       request(app)
         .post("/api/v1/favorites")
         .set("Authorization", `Bearer ${userToken}`)
-        .send({ resourceId }),
+        .send({ targetType: "resource", targetId: resourceId }),
       request(app)
         .post("/api/v1/favorites")
         .set("Authorization", `Bearer ${userToken}`)
-        .send({ resourceId }),
+        .send({ targetType: "resource", targetId: resourceId }),
     ]);
 
     expect(resA.status).toBe(200);
@@ -181,7 +181,7 @@ describe("Favorites API", () => {
     await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId });
+      .send({ targetType: "resource", targetId: resourceId });
 
     const listRes = await request(app)
       .get("/api/v1/favorites")
@@ -199,20 +199,20 @@ describe("Favorites API", () => {
     await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId });
+      .send({ targetType: "resource", targetId: resourceId });
 
     const removeRes = await request(app)
-      .delete(`/api/v1/favorites/${resourceId}`)
+      .delete(`/api/v1/favorites/resource/${resourceId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(removeRes.status).toBe(200);
 
     const statusRes = await request(app)
-      .get(`/api/v1/favorites/${resourceId}`)
+      .get(`/api/v1/favorites/resource/${resourceId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(statusRes.body.data.isFavorited).toBe(false);
 
     const secondRemoveRes = await request(app)
-      .delete(`/api/v1/favorites/${resourceId}`)
+      .delete(`/api/v1/favorites/resource/${resourceId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(secondRemoveRes.status).toBe(200);
   });
@@ -234,7 +234,7 @@ describe("Favorites API", () => {
     const addRes = await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId: pendingResourceId });
+      .send({ targetType: "resource", targetId: pendingResourceId });
     expect(addRes.status).toBe(404);
   });
 
@@ -244,7 +244,11 @@ describe("Favorites API", () => {
     const res = await request(app)
       .post("/api/v1/favorites")
       .set("Authorization", `Bearer ${userToken}`)
-      .send({ resourceId, note: "should not be allowed" });
+      .send({
+        targetType: "resource",
+        targetId: resourceId,
+        note: "should not be allowed",
+      });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
