@@ -30,7 +30,7 @@ export function MessageBubble({ message }: { message: AgentMessage }) {
             <ReactMarkdown
               components={{
                 p: ({ children }) => (
-                  <p className="mb-2 last:mb-0">{children}</p>
+                  <p className="mb-2 break-words last:mb-0">{children}</p>
                 ),
                 strong: ({ children }) => (
                   <strong className="font-semibold text-slate-900">
