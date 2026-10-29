@@ -12,7 +12,9 @@ JomDekan brings academic resources, discussions, peer tutoring, freelance opport
 
 > Portfolio project built with React, TypeScript, Express, PostgreSQL, Redis, and Docker.
 
-![JomDekan landing page](docs/images/landing-page-1.png)
+🎥 **[Watch the demo video](https://youtu.be/wZzSffhAfEg)**
+
+[![JomDekan landing page. Click to watch the demo video](docs/images/landing-page-1.png)](https://youtu.be/wZzSffhAfEg)
 
 ---
 
