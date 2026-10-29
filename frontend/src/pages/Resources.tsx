@@ -1,16 +1,39 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { FileText, ImageOff, UploadCloud, Download, Search, RotateCcw } from "lucide-react";
-import { useResources, useFilePreviewUrl, useDownloadUrl } from "../hooks/useResources";
+import { XlsxThumbnail } from "../components/common/XlsxThumbnail";
+
+import {
+  FileText,
+  ImageOff,
+  UploadCloud,
+  Download,
+  Search,
+  RotateCcw,
+} from "lucide-react";
+import {
+  useResources,
+  useFilePreviewUrl,
+  useDownloadUrl,
+} from "../hooks/useResources";
 import { useCurrentUser } from "../hooks/useAuth";
 import { FavoriteButton } from "../components/common/FavoriteButton";
 import { ReportButton } from "../components/common/ReportButton";
 import { PdfThumbnail } from "../components/common/PdfThumbnail";
 import { UserLink } from "../components/common/UserLink";
 import { SearchableSelect } from "../components/common/SearchableSelect";
-import { useUniversities, useFaculties, useProgrammes, useSubjects } from "../hooks/useTaxonomy";
+import {
+  useUniversities,
+  useFaculties,
+  useProgrammes,
+  useSubjects,
+} from "../hooks/useTaxonomy";
 import { ResourcesPageSkeleton } from "../components/common/ResourcesPageSkeleton";
-import { RESOURCE_CATEGORIES, RESOURCE_CATEGORY_LABELS, type ResourceCategory, type ResourceListItem } from "../types/resource";
+import {
+  RESOURCE_CATEGORIES,
+  RESOURCE_CATEGORY_LABELS,
+  type ResourceCategory,
+  type ResourceListItem,
+} from "../types/resource";
 import type { University } from "../types/taxonomy";
 import { fileTypeBadge } from "../utils/fileTypeBadge";
 import { useMinimumLoading } from "../hooks/useMinimumLoading";
@@ -26,7 +49,9 @@ function statusBadgeClass(status: ResourceListItem["status"]) {
 }
 
 function downloadAsText(title: string, description: string | null) {
-  const blob = new Blob([`${title}\n\n${description ?? ""}`], { type: "text/plain;charset=utf-8" });
+  const blob = new Blob([`${title}\n\n${description ?? ""}`], {
+    type: "text/plain;charset=utf-8",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -40,11 +65,16 @@ function downloadAsText(title: string, description: string | null) {
 function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
   const isImage = resource.readyFileMimeType?.startsWith("image/") ?? false;
   const isPdf = resource.readyFileMimeType === "application/pdf";
+  const isSheet =
+    resource.readyFileMimeType ===
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   // Each card fetches its own short-lived signed URL — the backend
   // re-checks visibility on every request, so there's no shortcut that
   // skips that check just because this is a thumbnail, not a download.
   const { data: previewUrl, isLoading } = useFilePreviewUrl(
-    isImage || isPdf ? (resource.readyFileId ?? undefined) : undefined,
+    isImage || isPdf || isSheet
+      ? (resource.readyFileId ?? undefined)
+      : undefined,
   );
 
   return (
@@ -63,9 +93,22 @@ function ResourceThumbnail({ resource }: { resource: ResourceListItem }) {
         )
       ) : isPdf ? (
         previewUrl ? (
-          <PdfThumbnail url={previewUrl} className="h-full w-full object-cover" />
-        ) : (
+          <PdfThumbnail
+            url={previewUrl}
+            className="h-full w-full object-cover"
+          />
+        ) : isLoading ? (
           <div className="h-full w-full animate-pulse bg-slate-200" />
+        ) : (
+          <FileText className="h-10 w-10 text-slate-300" aria-hidden="true" />
+        )
+      ) : isSheet ? (
+        previewUrl ? (
+          <XlsxThumbnail url={previewUrl} />
+        ) : isLoading ? (
+          <div className="h-full w-full animate-pulse bg-slate-200" />
+        ) : (
+          <FileText className="h-10 w-10 text-slate-300" aria-hidden="true" />
         )
       ) : (
         <FileText className="h-10 w-10 text-slate-300" aria-hidden="true" />
@@ -95,10 +138,16 @@ function ResourceTaxonomyLine({
   const faculty = faculties?.find((f) => f.id === resource.facultyId);
   const programme = programmes?.find((p) => p.id === resource.programmeId);
 
-  const parts = [university?.name, faculty?.name, programme?.name].filter(Boolean);
+  const parts = [university?.name, faculty?.name, programme?.name].filter(
+    Boolean,
+  );
   if (parts.length === 0) return null;
 
-  return <p className="mt-1 truncate text-xs font-semibold text-slate-400">{parts.join(" · ")}</p>;
+  return (
+    <p className="mt-1 truncate text-xs font-semibold text-slate-400">
+      {parts.join(" · ")}
+    </p>
+  );
 }
 
 function DownloadButton({ resource }: { resource: ResourceListItem }) {
@@ -112,7 +161,8 @@ function DownloadButton({ resource }: { resource: ResourceListItem }) {
         e.stopPropagation();
         if (resource.readyFileId) {
           downloadUrl.mutate(resource.readyFileId, {
-            onSuccess: (url) => window.open(url, "_blank", "noopener,noreferrer"),
+            onSuccess: (url) =>
+              window.open(url, "_blank", "noopener,noreferrer"),
           });
         } else {
           downloadAsText(resource.title, resource.description);
@@ -134,14 +184,22 @@ export default function Resources() {
   // needing their own pages for the same data.
   const [searchParams] = useSearchParams();
   const [mine, setMine] = useState(searchParams.get("mine") === "true");
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
-  const [q, setQ] = useState<string | undefined>(searchParams.get("search") ?? undefined);
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") ?? "",
+  );
+  const [q, setQ] = useState<string | undefined>(
+    searchParams.get("search") ?? undefined,
+  );
   const [sortBy, setSortBy] = useState<SortBy>("newest");
-  const [universityId, setUniversityId] = useState<string | undefined>(undefined);
+  const [universityId, setUniversityId] = useState<string | undefined>(
+    undefined,
+  );
   const [facultyId, setFacultyId] = useState<string | undefined>(undefined);
   const [programmeId, setProgrammeId] = useState<string | undefined>(undefined);
   const [subjectId, setSubjectId] = useState<string | undefined>(undefined);
-  const [category, setCategory] = useState<ResourceCategory | undefined>(undefined);
+  const [category, setCategory] = useState<ResourceCategory | undefined>(
+    undefined,
+  );
   const [page, setPage] = useState(1);
 
   // Debounce the search box so every keystroke doesn't trigger a request.
@@ -210,7 +268,12 @@ export default function Resources() {
   }
 
   const hasActiveFilters = Boolean(
-    searchInput || universityId || facultyId || programmeId || subjectId || category,
+    searchInput ||
+    universityId ||
+    facultyId ||
+    programmeId ||
+    subjectId ||
+    category,
   );
 
   function handleResetFilters() {
@@ -228,10 +291,12 @@ export default function Resources() {
     <div className="page-container page-container-standard">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="break-words text-2xl font-heading leading-tight tracking-tight text-content-primary sm:text-page-title">Academic Resources</h1>
+          <h1 className="break-words text-2xl font-heading leading-tight tracking-tight text-content-primary sm:text-page-title">
+            Academic Resources
+          </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {total > 0 ? `${total} resources` : "Browse resources"} — filter by university, programme, subject or
-            category.
+            {total > 0 ? `${total} resources` : "Browse resources"} — filter by
+            university, programme, subject or category.
           </p>
         </div>
         <Link
@@ -283,7 +348,10 @@ export default function Resources() {
       <div className="mt-6 rounded-[22px] border border-[#ECEBF7] bg-white p-5 shadow-sm">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
             <input
               type="search"
               value={searchInput}
@@ -306,12 +374,17 @@ export default function Resources() {
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>
-            <label className="text-overline uppercase text-content-muted">University</label>
+            <label className="text-overline uppercase text-content-muted">
+              University
+            </label>
             <div className="mt-1.5">
               <SearchableSelect
                 options={[
                   { value: "", label: "All universities" },
-                  ...(universities ?? []).map((u) => ({ value: u.id, label: u.name })),
+                  ...(universities ?? []).map((u) => ({
+                    value: u.id,
+                    label: u.name,
+                  })),
                 ]}
                 value={universityId ?? ""}
                 onChange={handleUniversityChange}
@@ -320,47 +393,70 @@ export default function Resources() {
             </div>
           </div>
           <div>
-            <label className="text-overline uppercase text-content-muted">Faculty</label>
+            <label className="text-overline uppercase text-content-muted">
+              Faculty
+            </label>
             <div className="mt-1.5">
               <SearchableSelect
                 options={[
                   { value: "", label: "All faculties" },
-                  ...(faculties ?? []).map((f) => ({ value: f.id, label: f.name })),
+                  ...(faculties ?? []).map((f) => ({
+                    value: f.id,
+                    label: f.name,
+                  })),
                 ]}
                 value={facultyId ?? ""}
                 onChange={handleFacultyChange}
                 disabled={!universityId}
-                placeholder={universityId ? "Search faculties…" : "Select a university first"}
+                placeholder={
+                  universityId
+                    ? "Search faculties…"
+                    : "Select a university first"
+                }
               />
             </div>
           </div>
           <div>
-            <label className="text-overline uppercase text-content-muted">Programme</label>
+            <label className="text-overline uppercase text-content-muted">
+              Programme
+            </label>
             <div className="mt-1.5">
               <SearchableSelect
                 options={[
                   { value: "", label: "All programmes" },
-                  ...(programmes ?? []).map((p) => ({ value: p.id, label: p.name })),
+                  ...(programmes ?? []).map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                  })),
                 ]}
                 value={programmeId ?? ""}
                 onChange={handleProgrammeChange}
                 disabled={!facultyId}
-                placeholder={facultyId ? "Search programmes…" : "Select a faculty first"}
+                placeholder={
+                  facultyId ? "Search programmes…" : "Select a faculty first"
+                }
               />
             </div>
           </div>
           <div>
-            <label className="text-overline uppercase text-content-muted">Subject</label>
+            <label className="text-overline uppercase text-content-muted">
+              Subject
+            </label>
             <div className="mt-1.5">
               <SearchableSelect
                 options={[
                   { value: "", label: "All subjects" },
-                  ...(subjects ?? []).map((s) => ({ value: s.id, label: s.code ? `${s.code} · ${s.name}` : s.name })),
+                  ...(subjects ?? []).map((s) => ({
+                    value: s.id,
+                    label: s.code ? `${s.code} · ${s.name}` : s.name,
+                  })),
                 ]}
                 value={subjectId ?? ""}
                 onChange={handleSubjectChange}
                 disabled={!programmeId}
-                placeholder={programmeId ? "Search subjects…" : "Select a programme first"}
+                placeholder={
+                  programmeId ? "Search subjects…" : "Select a programme first"
+                }
               />
             </div>
           </div>
@@ -373,7 +469,9 @@ export default function Resources() {
             type="button"
             onClick={() => handleCategoryChange(undefined)}
             className={`rounded-full px-4 py-2 text-sm font-bold transition motion-safe:duration-150 ${
-              !category ? "bg-primary-600 text-white" : "border border-[#E4E3F2] text-slate-600 hover:border-primary-200"
+              !category
+                ? "bg-primary-600 text-white"
+                : "border border-[#E4E3F2] text-slate-600 hover:border-primary-200"
             }`}
           >
             All
@@ -424,7 +522,10 @@ export default function Resources() {
                   key={r.id}
                   to={`/resources/${r.id}`}
                   style={{ animationDelay: `${i * 40}ms` }}
-                  className={cardClassName("resource", "flex flex-col overflow-hidden p-0 motion-safe:animate-[fadeIn_300ms_ease-out_both]")}
+                  className={cardClassName(
+                    "resource",
+                    "flex flex-col overflow-hidden p-0 motion-safe:animate-[fadeIn_300ms_ease-out_both]",
+                  )}
                 >
                   <ResourceThumbnail resource={r} />
                   <div className="flex flex-1 flex-col p-5">
@@ -437,7 +538,9 @@ export default function Resources() {
                       </span>
                       <div className="flex shrink-0 items-center gap-2">
                         {r.status !== "READY" && (
-                          <span className={`rounded-full px-2 py-0.5 text-caption ${statusBadgeClass(r.status)}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-caption ${statusBadgeClass(r.status)}`}
+                          >
                             {r.status}
                           </span>
                         )}
@@ -446,8 +549,13 @@ export default function Resources() {
                       </div>
                     </div>
 
-                    <h2 className="mt-grid-3 line-clamp-2 text-subsection-title text-content-primary">{r.title}</h2>
-                    <ResourceTaxonomyLine resource={r} universities={universities} />
+                    <h2 className="mt-grid-3 line-clamp-2 text-subsection-title text-content-primary">
+                      {r.title}
+                    </h2>
+                    <ResourceTaxonomyLine
+                      resource={r}
+                      universities={universities}
+                    />
 
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {subject?.code && (
@@ -463,12 +571,21 @@ export default function Resources() {
                     <div className="mt-4 flex flex-1 items-end justify-between gap-3 border-t border-[#F4F3FB] pt-3">
                       <span className="min-w-0 truncate text-xs font-semibold text-slate-500">
                         {r.ownerName ? (
-                          <UserLink userId={r.ownerId} name={r.ownerName} className="font-semibold text-slate-500 hover:text-primary-700 hover:underline" />
+                          <UserLink
+                            userId={r.ownerId}
+                            name={r.ownerName}
+                            className="font-semibold text-slate-500 hover:text-primary-700 hover:underline"
+                          />
                         ) : (
                           "A JomDekan student"
                         )}
                         <span className="block text-caption text-content-muted">
-                          Uploaded {new Date(r.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                          Uploaded{" "}
+                          {new Date(r.createdAt).toLocaleDateString(undefined, {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </span>
                       </span>
                       <DownloadButton resource={r} />
