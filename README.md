@@ -58,8 +58,8 @@ Students can browse and upload past papers, notes, slides, articles, spreadsheet
 
 ### AI study tools
 
-| AI study summary | Ask AI about this resource |
-| --- | --- |
+| AI study summary                                | Ask AI about this resource                        |
+| ----------------------------------------------- | ------------------------------------------------- |
 | ![AI study summary](docs/images/ai-summary.png) | ![Ask AI assistant](docs/images/ai-assistant.png) |
 
 Each resource can generate an **AI study summary** with an overview, key points, key terms, and a "Limitations & Notes" section that flags gaps in the source. Summaries show which file the AI used and can be downloaded as PDF or Word.
@@ -72,8 +72,8 @@ Every resource also has its own discussion section for questions and extra conte
 
 ### Discussions and messaging
 
-| Discussion forum | Private messages and booking requests |
-| --- | --- |
+| Discussion forum                            | Private messages and booking requests |
+| ------------------------------------------- | ------------------------------------- |
 | ![Discussions](docs/images/discussions.png) | ![Messages](docs/images/messages.png) |
 
 - Create discussion threads, then filter by unanswered, solved, or your own threads
@@ -83,8 +83,8 @@ Every resource also has its own discussion section for questions and extra conte
 
 ### Tutoring marketplace
 
-| Tutor listings | Tutor profile |
-| --- | --- |
+| Tutor listings                                    | Tutor profile                                   |
+| ------------------------------------------------- | ----------------------------------------------- |
 | ![Tutoring marketplace](docs/images/tutoring.png) | ![Tutor details](docs/images/tutor-details.png) |
 
 - Senior students and lecturers can apply to tutor and upload a résumé or CV
@@ -108,8 +108,8 @@ Campus clubs, startups, and lecturers can post paid student gigs.
 
 ### Favourites, notifications, and profile
 
-| Saved items | Notifications |
-| --- | --- |
+| Saved items                               | Notifications                                           |
+| ----------------------------------------- | ------------------------------------------------------- |
 | ![Favourites](docs/images/favourites.png) | ![Notifications](docs/images/student-notifications.png) |
 
 ![Profile and settings](docs/images/student-profile.png)
@@ -120,8 +120,8 @@ Campus clubs, startups, and lecturers can post paid student gigs.
 
 ### Administration and moderation
 
-| Admin analytics | User management |
-| --- | --- |
+| Admin analytics                                               | User management                                                 |
+| ------------------------------------------------------------- | --------------------------------------------------------------- |
 | ![Admin analytics dashboard](docs/images/admin-dashboard.png) | ![Admin user management](docs/images/admin-user-management.png) |
 
 Administrators get a separate portal with:
@@ -133,8 +133,8 @@ Administrators get a separate portal with:
 - Academic taxonomy management (universities, faculties, programmes, subjects)
 - Announcements and audit logs
 
-| Moderation queue | Moderation decision |
-| --- | --- |
+| Moderation queue                                      | Moderation decision                                             |
+| ----------------------------------------------------- | --------------------------------------------------------------- |
 | ![Moderation queue](docs/images/admin-moderation.png) | ![Moderation decision](docs/images/admin-moderation-action.png) |
 
 Reports are grouped by content type: resources, discussions, tutoring, freelance opportunities, and users. Administrators open a full preview of the reported content, then resolve or reject the report using a standard response template. The reporter is notified by email and in-app notification.
@@ -155,13 +155,13 @@ These features aren't shown in the screenshots above.
 
 JomDekan emails users about important events. It supports SMTP, Resend, or SendGrid, plus a console mode for local development that logs emails instead of sending them. Emails are sent in the background, so a slow provider never delays the app.
 
-| Area | Emails sent |
-| --- | --- |
-| Accounts | Email verification on sign-up, password reset links, and notices when an account is disabled, re-enabled, or deleted |
-| Tutoring | Tutor application approved or declined, tutor status revoked, new session requests, booking decisions, and reschedules |
-| Freelance | New applications to the poster and application status updates to the applicant |
-| Moderation | New reports to administrators, decisions to the reporter, and notices to the author of removed content |
-| Support | Support requests and suggestions to administrators |
+| Area       | Emails sent                                                                                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Accounts   | Email verification on sign-up, password reset links, and notices when an account is disabled, re-enabled, or deleted   |
+| Tutoring   | Tutor application approved or declined, tutor status revoked, new session requests, booking decisions, and reschedules |
+| Freelance  | New applications to the poster and application status updates to the applicant                                         |
+| Moderation | New reports to administrators, decisions to the reporter, and notices to the author of removed content                 |
+| Support    | Support requests and suggestions to administrators                                                                     |
 
 #### Google Calendar sync
 
@@ -581,36 +581,34 @@ See [docs/implementation-plan.md](docs/implementation-plan.md) for remaining and
 
 ---
 
-## Author
+## Team
 
-Developed by [nurinirdnz](https://github.com/nurinirdnz) aka Nurin Irdina, Syafiqah Wahidah, Nurul Syafiqah, Nisshaliny and Elly Adriana for Korea-ASEAN Digital Academy - Full Stack Developer Full - Stack Bootcamp.
+JomDekan was built by a team of five for the **Korea-ASEAN Digital Academy (KADA) Full-Stack Developer Bootcamp**:
+
+| Name             | GitHub                                                   |
+| ---------------- | -------------------------------------------------------- |
+| Nurin Irdina     | [@nurinirdnz](https://github.com/nurinirdnz)             |
+| Nurul Syafiqah   | [@Syfiqh](https://github.com/Syfiqh)                     |
+| Syafiqah Wahidah | [@syafiqahwahidah](https://github.com/syafiqahwahidah)   |
+| Nisshaliny       | [@MNissha](https://github.com/MNissha)                   |
+| Elly Adriana     | [@ellyadrianna-cmd](https://github.com/ellyadrianna-cmd) |
 
 ---
 
-## Contributions
+## My contributions
 
-### Nurin Irdina
+**Nurin Irdina:** full-stack developer.
 
-- Established and maintained JomDekan’s project foundation, development environment, database workflow, Docker configuration, technical documentation, and CI pipeline.
-- Integrated and enhanced the team-built authentication and academic taxonomy systems, improving authorization, validation, session behaviour, university-scoped subjects, self-service taxonomy requests, and admin workflows.
-- Redesigned major parts of the student portal, including the dashboard, navigation, profile, marketplace, loading states, empty states, responsiveness, and reusable UI components.
-- Substantially rebuilt and enhanced the Academic Resources experience, including browsing, filtering, uploading, categories, file previews, resource details, favourites, reporting, and responsive layouts.
-- Created the Admin Resources page, including resource inspection, searching, management actions, archive controls, and loading states.
-- Built AI-powered resource summaries, multi-file source selection, document processing, generated study materials, and the “Ask This Resource” assistant.
-- Developed the reporting system across resources, discussions, comments, users, tutoring listings, and freelance opportunities, including screenshot evidence and report-status handling.
-- Substantially enhanced the team-built moderation system with complete reported-content previews, direct content access, decision workflows, response templates, notifications, and clearer administrator review experiences.
-- Created the Admin Notifications page and improved the broader team-built notification experience with popovers, unread states, filtering, presentation rules, moderation updates, and administrative announcements.
-- Created the initial admin interface for freelance-opportunity management and later improved its workflows, usability, loading states, and dark-mode support.
-- Enhanced team-built tutoring with self-service applications, résumé uploads, subject selection, cross-university availability, session modes, contact details, bookings, and improved administrator review.
-- Enhanced existing admin analytics, user-management, tutor-application, listing, and audit-log interfaces without claiming ownership of their original implementations.
-- Improved audit-log usefulness by reconstructing clearer action details for administrators.
-- Built and documented reusable design-system components for cards, forms, controls, status displays, dialogs, navigation, and overlays.
-- Implemented and refined platform-wide dark mode and accessibility, correcting contrast, hover, focus, selected, disabled, error, warning, and success states across student and administrator interfaces.
-- Strengthened security with Redis-backed rate limiting, file-signature validation, configurable ClamAV scanning, infected-file rejection, secure uploads, and nested storage handling.
-- Added orphaned-resource-file detection and improved storage consistency and cleanup.
-  Added extensive frontend, backend, AI, notification, moderation, integration, upload-security, and regression tests.
-- Fixed TypeScript configuration, merge conflicts, broken CI checks, UI regressions, modal positioning, and cross-feature integration issues.
-- Integrated and stabilized teammates’ work across forums, favourites, tutoring, freelance listings, notifications, moderation, analytics, user management, and audit logs through pull-request workflows.
+- **Project foundation and delivery:** set up the repository, Express and React project structure, Docker environment, PostgreSQL migration workflow, CI pipeline, and branch protection the team worked in; integrated teammates' features and fixed cross-feature conflicts and regressions to keep `main` stable.
+- **Authentication and core data model:** built the first version of authentication (JWT access tokens and rotating refresh sessions with reuse detection) and wrote the core database schema for users, sessions, and the academic taxonomy.
+- **AI study tools:** built AI resource summaries, multi-file source selection, document text extraction, and the "Ask This Resource" assistant with citations and formatted answers.
+- **Academic resources:** rebuilt resource browsing and filtering, built PDF and spreadsheet previews and the admin resource management page, and extended the upload and resource-detail pages.
+- **Security:** added Redis-backed distributed rate limiting, configurable ClamAV malware scanning, and Row-Level Security on all database tables, and extended file-signature validation to every upload path.
+- **Reporting and moderation:** built reporting across all content types with screenshot evidence, and extended moderation with full content previews, decision workflows, response templates, and notifications.
+- **Design system and accessibility:** created reusable UI components and implemented platform-wide dark mode with accessible contrast and focus states.
+- **Testing:** wrote most of the project's automated tests (frontend, backend, integration, and upload security), which run in CI on every pull request.
+
+A detailed breakdown is in [docs/contributions.md](docs/contributions.md).
 
 ## Repository
 
