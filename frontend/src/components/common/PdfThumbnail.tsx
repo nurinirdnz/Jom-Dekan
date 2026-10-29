@@ -12,20 +12,43 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
  * decoded client-side instead of shown via <img>. Falls back to a plain
  * file icon if the PDF fails to load/render (e.g. a stale/expired URL).
  */
-export function PdfThumbnail({ url, className }: { url: string; className?: string }) {
+export function PdfThumbnail({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
 
   useEffect(() => {
     let cancelled = false;
     let renderTask: ReturnType<
-      Awaited<ReturnType<Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>["getPage"]>>["render"]
+      Awaited<
+        ReturnType<
+          Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>["getPage"]
+        >
+      >["render"]
     > | null = null;
     setStatus("loading");
 
+    // pdf.js can hang rather than reject (e.g. the worker script never
+    // loads), so give up after a while instead of pulsing forever.
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) {
+        console.warn("PDF thumbnail timed out:", url);
+        setStatus((s) => (s === "loading" ? "error" : s));
+      }
+    }, 15000);
+
+    const loadingTask = pdfjsLib.getDocument({ url });
+
     (async () => {
       try {
-        const pdf = await pdfjsLib.getDocument({ url }).promise;
+        const pdf = await loadingTask.promise;
         if (cancelled) return;
         const page = await pdf.getPage(1);
         if (cancelled) return;
@@ -45,14 +68,19 @@ export function PdfThumbnail({ url, className }: { url: string; className?: stri
         renderTask = page.render({ canvasContext: context, viewport, canvas });
         await renderTask.promise;
         if (!cancelled) setStatus("ready");
-      } catch {
+      } catch (err) {
+        console.warn("PDF thumbnail failed:", url, err);
         if (!cancelled) setStatus("error");
+      } finally {
+        window.clearTimeout(timeout);
       }
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
       renderTask?.cancel();
+      loadingTask.destroy();
     };
   }, [url]);
 
@@ -62,8 +90,13 @@ export function PdfThumbnail({ url, className }: { url: string; className?: stri
 
   return (
     <>
-      {status === "loading" && <div className="h-full w-full animate-pulse bg-slate-200" />}
-      <canvas ref={canvasRef} className={status === "ready" ? className : "hidden"} />
+      {status === "loading" && (
+        <div className="h-full w-full animate-pulse bg-slate-200" />
+      )}
+      <canvas
+        ref={canvasRef}
+        className={status === "ready" ? className : "hidden"}
+      />
     </>
   );
 }

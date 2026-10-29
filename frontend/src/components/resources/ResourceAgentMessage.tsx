@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, ChevronDown } from "lucide-react";
 import type { AgentMessage } from "../../types/resourceAgent";
+import ReactMarkdown from "react-markdown";
 
 export function UserBubble({ content }: { content: string }) {
   return (
@@ -21,8 +22,41 @@ export function MessageBubble({ message }: { message: AgentMessage }) {
     <div className="flex justify-start">
       <div className="flex max-w-[92%] flex-col gap-2 rounded-2xl rounded-tl-sm border border-[#ECEBF7] bg-white px-4 py-3">
         <div className="flex items-start gap-2">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#F5C21A]" aria-hidden="true" />
-          <p className="whitespace-pre-wrap break-words text-sm text-slate-700">{message.content}</p>
+          <Sparkles
+            className="mt-0.5 h-4 w-4 shrink-0 text-[#F5C21A]"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 break-words text-sm text-slate-700">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0">{children}</p>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-slate-900">
+                    {children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">
+                    {children}
+                  </ol>
+                ),
+                code: ({ children }) => (
+                  <code className="rounded bg-slate-100 px-1 py-0.5 text-[13px]">
+                    {children}
+                  </code>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
         </div>
         {message.citations.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pl-6">
@@ -34,7 +68,10 @@ export function MessageBubble({ message }: { message: AgentMessage }) {
         {message.suggestedQuestions.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pl-6">
             {message.suggestedQuestions.map((q, i) => (
-              <span key={i} className="rounded-full bg-[#EFEEFB] px-2.5 py-1 text-[11px] font-medium text-[#4338CA]">
+              <span
+                key={i}
+                className="rounded-full bg-[#EFEEFB] px-2.5 py-1 text-[11px] font-medium text-[#4338CA]"
+              >
                 {q}
               </span>
             ))}
@@ -45,9 +82,16 @@ export function MessageBubble({ message }: { message: AgentMessage }) {
   );
 }
 
-function CitationChip({ citation }: { citation: AgentMessage["citations"][number] }) {
+function CitationChip({
+  citation,
+}: {
+  citation: AgentMessage["citations"][number];
+}) {
   const [expanded, setExpanded] = useState(false);
-  const label = citation.pageNumber != null ? `Page ${citation.pageNumber}` : citation.sourceLabel;
+  const label =
+    citation.pageNumber != null
+      ? `Page ${citation.pageNumber}`
+      : citation.sourceLabel;
 
   return (
     <div className="rounded-lg border border-[#EFEEFB] bg-[#EFEEFB] dark:border-primary-400/20 dark:bg-primary-400/10">
