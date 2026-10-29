@@ -10,3 +10,4 @@ coverage/
 backend/uploads-stub/
 backend/storage/
 *.tsbuildinfo
+test-results/ 
