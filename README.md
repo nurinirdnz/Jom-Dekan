@@ -12,6 +12,8 @@ JomDekan brings academic resources, discussions, peer tutoring, freelance opport
 
 > Portfolio project built with React, TypeScript, Express, PostgreSQL, Redis, and Docker.
 
+![JomDekan landing page](docs/images/landing-page-1.png)
+
 ---
 
 ## Overview
@@ -34,55 +36,108 @@ Administrators receive a dedicated portal for moderation, user management, acade
 
 ---
 
-## Key features
+## Feature tour
+
+### Student dashboard
+
+![Student dashboard](docs/images/student-dashboard.png)
+
+After logging in, students land on a personalised dashboard with shortcuts to resources and tutoring, counts of their uploads, favourites, forum posts, and unread notifications, plus recommended resources and recent activity.
 
 ### Academic resources
 
-- Upload and browse academic materials
-- Filter resources by university, faculty, programme, subject, and category
-- Save favourite resources
-- Secure file download URLs
-- AI-generated summaries and resource Q&A
-- Resource reporting and administrative review
+![Academic resources browse page](docs/images/academic-resources-browse-page.png)
 
-### Discussions and communication
+Students can browse and upload past papers, notes, slides, articles, spreadsheets, and exercises.
 
-- Create and respond to discussion threads
-- View complete thread and comment details during moderation
-- Private user messaging
-- In-app notifications
-- Administrative announcements
+- Search, then filter by university, faculty, programme, subject, and category
+- Live first-page previews for PDFs and first-row previews for Excel spreadsheets
+- Switch between all resources and your own uploads
+- Save favourites and report inappropriate resources
+- Downloads use short-lived signed URLs that re-check access on every request
+
+### AI study tools
+
+| AI study summary | Ask AI about this resource |
+| --- | --- |
+| ![AI study summary](docs/images/ai-summary.png) | ![Ask AI assistant](docs/images/ai-assistant.png) |
+
+Each resource can generate an **AI study summary** with an overview, key points, key terms, and a "Limitations & Notes" section that flags gaps in the source. Summaries show which file the AI used and can be downloaded as PDF or Word.
+
+The **Ask This Resource** assistant answers questions using the resource's content. Both features are clearly labelled as AI-generated and remind students to verify against the original material.
+
+![Resource discussion](docs/images/materials-discussion.png)
+
+Every resource also has its own discussion section for questions and extra context.
+
+### Discussions and messaging
+
+| Discussion forum | Private messages and booking requests |
+| --- | --- |
+| ![Discussions](docs/images/discussions.png) | ![Messages](docs/images/messages.png) |
+
+- Create discussion threads, then filter by unanswered, solved, or your own threads
+- Like, save, and report posts
+- Private one-to-one messaging between students
+- Tutoring booking requests arrive in the conversation, where the tutor can accept, decline, or reschedule
 
 ### Tutoring marketplace
 
-- Apply to become a tutor
-- Upload a résumé or CV
-- Publish tutoring listings
-- Configure subjects, rates, availability, and session mode
-- Accept students from other universities or programmes
-- Request and manage tutoring bookings
-- Administrative tutor and listing review
+| Tutor listings | Tutor profile |
+| --- | --- |
+| ![Tutoring marketplace](docs/images/tutoring.png) | ![Tutor details](docs/images/tutor-details.png) |
+
+- Senior students and lecturers can apply to tutor and upload a résumé or CV
+- Listings show subjects, hourly rate, and session mode (online, in person, or hybrid)
+- Tutor profiles include qualifications, availability, and teaching background
+- Tutors can accept students from other universities and programmes
+- Students request sessions and track their bookings
+- Every tutor and listing is reviewed by an administrator
+
+JomDekan does not process payments. Tutors and students arrange sessions directly.
 
 ### Freelance opportunities
 
-- Publish student-focused opportunities
-- Specify work details, budgets, skills, and application deadlines
-- Submit applications with CV or portfolio files
-- Save and report listings
-- Administrative listing management
+![Freelance opportunities](docs/images/freelance-opportunities.png)
+
+Campus clubs, startups, and lecturers can post paid student gigs.
+
+- Listings specify the budget, required skills, work mode, and application deadline
+- Students apply with a CV or portfolio file and see their application status
+- Every listing is manually reviewed, and academic ghost-writing requests are rejected
+
+### Favourites, notifications, and profile
+
+| Saved items | Notifications |
+| --- | --- |
+| ![Favourites](docs/images/favourites.png) | ![Notifications](docs/images/student-notifications.png) |
+
+![Profile and settings](docs/images/student-profile.png)
+
+- Save resources, discussions, tutors, and opportunities in one place
+- Notifications are grouped into announcements, reports, marketplace, community, resources, account, and requests
+- The profile page shows each student's activity and links to password and security settings, tutoring, and bookings
 
 ### Administration and moderation
 
-- User administration
-- Resource management
+| Admin analytics | User management |
+| --- | --- |
+| ![Admin analytics dashboard](docs/images/admin-dashboard.png) | ![Admin user management](docs/images/admin-user-management.png) |
+
+Administrators get a separate portal with:
+
+- Platform analytics showing user composition and six-month activity, exportable to Excel
+- User management to create, edit, suspend, and delete accounts and view each user's activity
+- Resource, tutoring, and freelance listing management
 - Tutor application review
-- Tutoring and freelance listing management
-- Full reported-content previews
-- Moderation decisions and user responses
-- Notifications and announcements
-- Audit logging
-- Platform analytics
-- University, faculty, programme, and subject management
+- Academic taxonomy management (universities, faculties, programmes, subjects)
+- Announcements and audit logs
+
+| Moderation queue | Moderation decision |
+| --- | --- |
+| ![Moderation queue](docs/images/admin-moderation.png) | ![Moderation decision](docs/images/admin-moderation-action.png) |
+
+Reports are grouped by content type: resources, discussions, tutoring, freelance opportunities, and users. Administrators open a full preview of the reported content, then resolve or reject the report using a standard response template. The reporter is notified by email and in-app notification.
 
 ### Accessibility and theming
 
@@ -91,6 +146,56 @@ Administrators receive a dedicated portal for moderation, user management, acade
 - Theme-aware cards, dialogs, tables, forms, and navigation
 - Accessible hover, focus, selected, disabled, error, warning, and success states
 - Improved contrast across student and administrator interfaces
+
+### More features
+
+These features aren't shown in the screenshots above.
+
+#### Email notifications
+
+JomDekan emails users about important events. It supports SMTP, Resend, or SendGrid, plus a console mode for local development that logs emails instead of sending them. Emails are sent in the background, so a slow provider never delays the app.
+
+| Area | Emails sent |
+| --- | --- |
+| Accounts | Email verification on sign-up, password reset links, and notices when an account is disabled, re-enabled, or deleted |
+| Tutoring | Tutor application approved or declined, tutor status revoked, new session requests, booking decisions, and reschedules |
+| Freelance | New applications to the poster and application status updates to the applicant |
+| Moderation | New reports to administrators, decisions to the reporter, and notices to the author of removed content |
+| Support | Support requests and suggestions to administrators |
+
+#### Google Calendar sync
+
+Tutors can connect their Google Calendar. Confirmed tutoring sessions are added to it automatically, and the calendar stays in sync when a session is rescheduled.
+
+#### Accounts and security
+
+- Registration with email verification
+- Forgot-password and reset-password flow
+- Temporary account lockout after repeated failed login attempts
+- Public user profiles
+
+#### Uploads and reporting
+
+- Resource uploads tagged by university, faculty, programme, subject, and category
+- Every upload is size-checked, signature-validated, and malware-scanned
+- Reports can include screenshot evidence
+
+#### Community-driven academic taxonomy
+
+Students can add a subject that is missing from the list. It's marked as not yet verified until an administrator reviews the request.
+
+#### Help and support
+
+- Help page, "How it works" guide, and privacy policy
+- In-app support requests and suggestions, sent to administrators in-app and by email
+
+#### Additional admin tools
+
+- Tutor application review, including résumés
+- Taxonomy request review, plus management of universities, faculties, programmes, and subjects
+- Platform-wide announcements
+- Audit logs showing which administrator did what, and when
+- Detailed per-user views
 
 ---
 
